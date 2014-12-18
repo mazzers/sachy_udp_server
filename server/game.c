@@ -15,10 +15,12 @@ void create_game(client_t *client){
 	int i=0;
 
 	if(client->game_index== -1){
+		printf("game.c: client->game_index=-1\n");
 		game_t *game = (game_t *) malloc(sizeof(game_t));
 		memset(game->player_indexes, -1, sizeof(int)*2);
 		game->player_indexes[0] = client->client_index;
 		game->player_num=1;
+		printf("game.c: b4 for\n");
 
 		for(i=0;i<MAX_CURRENT_GAMES;i++){
 			if(games[i]==NULL){

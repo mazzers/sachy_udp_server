@@ -11,6 +11,8 @@
 
 #include "server.h"
 #include "client.h"
+#include "game.h"
+#include "global.h"
 
 
 
@@ -59,12 +61,35 @@ void init_server(){
 void read_received_mgs(char *dgram, struct sockaddr_in *addr){
 	char *msg;
 	msg = strtok(dgram,";");
-	if (strncmp(msg,"ADD_CLIENT",10)==0)
+	client_t *client;
+	char addr_str[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &addr->sin_addr, addr_str,INET_ADDRSTRLEN);
+
+	if (strncmp(msg,"CONNECT",10)==0)
 	{
 		printf("Call: Add client\n");
 		add_client(addr);
+		client=get_client_by_addr(addr);
+		if (client)
+		{
+			/* code */
+			release_client(client);
+		}
+		//printf("server.c: client found\n");
+
 	}else if (strncmp(msg,"CREATE_GAME",11)==0){
 		printf("Create game\n");
+		client=get_client_by_addr(addr);
+		if (client!=NULL)
+		{
+			create_game(client);
+			/* code */
+		}else
+		{
+			printf("cant create game: client==null\n");
+		}
+		
+
 	}else if (strncmp(msg,"JOIN_GAME",9)==0){
 		printf("Join game\n");
 	}

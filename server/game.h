@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "client.h"
 extern unsigned int game_num;
 
 typedef struct{
@@ -15,5 +16,6 @@ typedef struct{
 
 }game_t;
 
+void create_game(client_t *client);
 
 #endif
