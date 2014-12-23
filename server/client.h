@@ -30,6 +30,9 @@ void add_client(struct sockaddr_in *addr);
 client_t* get_client_by_addr(struct sockaddr_in *addr);
 void release_client(client_t *client);
 void update_client_timestamp(client_t *client);
+void remove_client(client_t **client);
+void clear_client_dgram_queue(client_t *client);
+void clear_all_clients();
 
 
 

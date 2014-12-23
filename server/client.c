@@ -21,6 +21,7 @@
 client_t *clients[MAX_CURRENT_CLIENTS]={NULL};
 
 unsigned int client_num=0;
+char log_buffer[LOG_BUFFER_SIZE];
 
 void add_client(struct sockaddr_in *addr){
 	printf("Client.c: add_client\n");
@@ -165,5 +166,65 @@ client_t* get_client_by_index(int index) {
 void update_client_timestamp(client_t *client) {
     if(client != NULL) {
         gettimeofday(&client->timestamp, NULL);
+    }
+}
+
+void remove_client(client_t **client) {            
+    if(client != NULL) {
+        sprintf(log_buffer,
+                "Removing client with IP address: %s and port %d",
+                (*client)->addr_str,
+                htons((*client)->addr->sin_port)
+                );
+        
+        log_line(log_buffer, LOG_INFO);
+        
+        clients[(*client)->client_index] = NULL;
+        //reconnect_code[(*client)->client_index] = NULL;
+        
+        free((*client)->addr);
+        free((*client)->addr_str);
+        //free((*client)->reconnect_code);
+        
+        client_num --;
+        
+        /* Release client */
+        release_client((*client));
+        
+	clear_client_dgram_queue((*client));
+        free((*client)->dgram_queue);
+        free((*client));
+    }
+    
+    *client = NULL;
+}
+
+void clear_client_dgram_queue(client_t *client) {
+    packet_t *packet = queue_front(client->dgram_queue);
+    
+    while(packet) {
+        queue_pop(client->dgram_queue, 0);
+        
+        if(packet->state) {
+            free(packet->payload);
+        }
+        
+        free(packet->msg);
+        free(packet);
+        
+        packet = queue_front(client->dgram_queue);
+    }
+}
+
+void clear_all_clients() {
+    int i = 0;
+    client_t *client;
+    
+    for(i = 0; i < MAX_CURRENT_CLIENTS; i++) {
+        client = get_client_by_index(i);
+        
+        if(client) {
+            remove_client(&client);
+        }
     }
 }

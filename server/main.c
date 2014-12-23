@@ -15,6 +15,7 @@
 #include "logger.h"
 #include "global.h"
 #include "receiver.h"
+#include "com.h"
 
 pthread_t thr_receiver; 
 pthread_mutex_t mtx_thr_receiver; 
@@ -36,7 +37,7 @@ int run(){
 
 	pthread_mutex_init(&mtx_thr_receiver, NULL);
 	pthread_mutex_lock(&mtx_thr_receiver);
-	
+
 	if(pthread_create(&thr_receiver, NULL, start_receiving, (void *) &mtx_thr_receiver) != 0) {
 		raise_error("Error starting receiving thread.");
 	}
@@ -48,7 +49,7 @@ int run(){
 				(strncmp(user_input_buffer, "shutdown", 8) == 0) ||
 				(strncmp(user_input_buffer, "halt", 4) == 0) ||
 				(strncmp(user_input_buffer, "close", 5) == 0)) {
-				
+
                 //_shutdown();
 				return(0);
 			break;                
@@ -59,6 +60,80 @@ int run(){
 
 
 }
+
+
+void _shutdown() {        
+    char *msg = "CONN_CLOSE";    
+    
+    log_line("SERV: Caught shutdown command.", LOG_ALWAYS);
+    log_line("SERV: Informing clients server is going down.", LOG_ALWAYS);
+    
+    /* Inform clients about shutdown */
+    broadcast_clients(msg);
+    
+    log_line("#### START Stats ####", LOG_ALWAYS);
+    
+    /* Elapsed time */
+    display_uptime();
+    
+    /* Sent bytes*/
+    sprintf(log_buffer,
+            "Sent bytes (raw): %u",
+            sent_bytes
+            );
+    log_line(log_buffer, LOG_ALWAYS);
+    
+    /* Sent messages */
+    sprintf(log_buffer,
+            "Sent datagrams: %u",
+            sent_dgrams
+            );
+    log_line(log_buffer, LOG_ALWAYS);
+    
+    /* Received bytes */
+    sprintf(log_buffer,
+            "Received bytes (raw): %u",
+            recv_bytes
+            );
+    log_line(log_buffer, LOG_ALWAYS);
+    
+    /* Received messages */
+    sprintf(log_buffer,
+            "Received datagrams: %u",
+            recv_dgrams
+            );
+    log_line(log_buffer, LOG_ALWAYS);
+    
+    /* Total number of connections */
+    sprintf(log_buffer,
+            "Total # of connections: %u",
+            num_connections
+            );
+    log_line(log_buffer, LOG_ALWAYS);
+    
+    log_line("#### END Stats ####", LOG_ALWAYS);
+    
+    /* Clear clients */
+    clear_all_clients();
+    /* Clear games */
+    clear_all_games();
+    
+    log_line("SERV: Asking threads to terminate.", LOG_ALWAYS);
+    
+    //pthread_mutex_unlock(&mtx_thr_watchdog);
+    pthread_mutex_unlock(&mtx_thr_receiver);
+    //pthread_mutex_unlock(&mtx_thr_sender);
+    
+    /* Join threads */
+    //pthread_join(thr_watchdog, NULL);
+    pthread_join(thr_receiver, NULL);
+    //pthread_join(thr_sender, NULL);
+    
+    stop_logger();
+}
+
+
+
 
 
 int main(int argc, char const *argv[])

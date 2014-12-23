@@ -86,7 +86,7 @@ void read_received_mgs(char *dgram, struct sockaddr_in *addr){
 
 	if (strncmp(msg,"CONNECT",10)==0)
 	{
-		printf("Call: Add client\n");
+		sprintf(log_buffer,"Call connect");
 		add_client(addr);
 		client=get_client_by_addr(addr);
 		if (client)

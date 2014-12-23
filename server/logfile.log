@@ -36,3 +36,28 @@
 23.12.14, 12:31:38: Starting server with IP 127.0.0.1 and port 10000
 23.12.14, 12:31:51: DATA_IN: CONNECT;9;OK; <--- 127.0.0.1:41359
 23.12.14, 12:32:23: DATA_IN: CREATE_GAME;OK; <--- 127.0.0.1:41359
+23.12.14, 14:25:24: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 14:25:24: Logger started
+23.12.14, 14:25:24: parapappaa
+23.12.14, 14:25:24: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 14:25:33: DATA_IN: CONNECT;5;OK; <--- 127.0.0.1:59072
+23.12.14, 14:25:45: DATA_IN: CREATE_GAME;OK; <--- 127.0.0.1:59072
+23.12.14, 14:25:49: DATA_IN: JOIN_GAME;OK;K; <--- 127.0.0.1:59072
+23.12.14, 14:29:11: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 14:29:11: Logger started
+23.12.14, 14:29:11: parapappaa
+23.12.14, 14:29:11: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 14:29:25: DATA_IN: CONNECT;1;OK; <--- 127.0.0.1:60733
+23.12.14, 14:29:51: DATA_IN: CONNECT;3;OK; <--- 127.0.0.1:51665
+23.12.14, 14:33:24: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 14:33:24: Logger started
+23.12.14, 14:33:24: parapappaa
+23.12.14, 14:33:24: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 14:33:29: DATA_IN: CONNECT;3;OK; <--- 127.0.0.1:51665
+23.12.14, 14:34:03: DATA_IN: CONNECT;1;OK; <--- 127.0.0.1:60733
