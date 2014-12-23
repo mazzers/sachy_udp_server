@@ -13,6 +13,9 @@
 #include "global.h"
 #include "server.h"
 #include "game.h"
+#include "queue.h"
+#include "com.h"
+#include "logger.h"
 
 //clients array
 client_t *clients[MAX_CURRENT_CLIENTS]={NULL};
@@ -41,8 +44,18 @@ void add_client(struct sockaddr_in *addr){
 
 			memcpy(new_addr, addr, sizeof(struct sockaddr_in));
 			new_client->addr = new_addr;
+			char *some_addr;
+			some_addr = inet_ntoa(new_client->addr->sin_addr);
+			printf("client->addr%s\n",some_addr );
+			//int port = inet_htons(new_client->addr->sin_port);
+			//printf("client->addr%d\n",port);
 			new_client->game_index=-1;
+			printf("client->gameindex=%d\n",new_client->game_index );
 			new_client->addr_str = malloc(INET_ADDRSTRLEN +1);
+			 new_client->pkt_recv_seq_id = 1;
+            new_client->pkt_send_seq_id = 1;
+            new_client->state = 1;
+            new_client->dgram_queue = malloc(sizeof(Queue));
 
 			pthread_mutex_init(&new_client->mtx_client, NULL);
 			inet_ntop(AF_INET, &addr->sin_addr, new_client->addr_str, INET_ADDRSTRLEN);
@@ -61,6 +74,8 @@ void add_client(struct sockaddr_in *addr){
 			}
 		}else{
 			printf("client.c: client exists\n");
+			release_client(existing_client);
+
 
 		}
 		
@@ -106,13 +121,15 @@ client_t* get_client_by_addr(struct sockaddr_in *addr) {
 
             /* Check if client still exists */
 			if(clients[i] != NULL) {
-					printf("client[%d]!=NULL\n",i );
+				printf("client[%d]!=NULL\n",i );
                     /* Check if address and port matches */
 				if(strncmp(clients[i]->addr_str, addr_str, INET_ADDRSTRLEN) == 0
 					&& (htons((addr)->sin_port) == htons(clients[i]->addr->sin_port) )) {
 					printf("client matched\n");
-					return clients[i];
+				return clients[i];
 
+			}else{
+				printf("client not matched\n");
 			}
 		}
 		printf("call release_client\n");
@@ -127,6 +144,7 @@ void release_client(client_t *client) {
 	printf("release_client\n");  
 	if(client && pthread_mutex_trylock(&client->mtx_client) != 0) {
 		pthread_mutex_unlock(&client->mtx_client);
+		printf("out of release_client\n");
 	}
 	else {
         //log_line("Tried to release non-locked client", LOG_WARN);
@@ -135,11 +153,17 @@ void release_client(client_t *client) {
 }
 
 client_t* get_client_by_index(int index) {
-    if(index>= 0 && MAX_CURRENT_CLIENTS > index && clients[index]) {    
-        pthread_mutex_lock(&clients[index]->mtx_client);
-        
-        return clients[index];
+	if(index>= 0 && MAX_CURRENT_CLIENTS > index && clients[index]) {    
+		pthread_mutex_lock(&clients[index]->mtx_client);
+
+		return clients[index];
+	}
+
+	return NULL;
+}
+
+void update_client_timestamp(client_t *client) {
+    if(client != NULL) {
+        gettimeofday(&client->timestamp, NULL);
     }
-    
-    return NULL;
 }
