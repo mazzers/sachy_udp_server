@@ -1,13 +1,8 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <stdio.h>
-#include <arpa/inet.h>
-#include <sys/time.h>
-#include <errno.h>
-#include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <unistd.h>
+#include <string.h>
+#include <arpa/inet.h>
 
 #include "server.h"
 #include "err.h"
@@ -15,10 +10,14 @@
 #include "logger.h"
 #include "global.h"
 #include "receiver.h"
+#include "sender.h"
 #include "com.h"
 
 pthread_t thr_receiver; 
+pthread_t thr_sender;
+
 pthread_mutex_t mtx_thr_receiver; 
+pthread_mutex_t mtx_thr_sender;
 char log_buffer[LOG_BUFFER_SIZE];
 
 
@@ -29,7 +28,7 @@ int run(){
 
 	gettimeofday(&ts_start,NULL);
 	init_logger("logfile.log");
-	log_line("parapappaa", LOG_ALWAYS);
+	//log_line("parapappaa", LOG_ALWAYS);
 
 
 
@@ -41,6 +40,14 @@ int run(){
 	if(pthread_create(&thr_receiver, NULL, start_receiving, (void *) &mtx_thr_receiver) != 0) {
 		raise_error("Error starting receiving thread.");
 	}
+
+	   pthread_mutex_init(&mtx_thr_sender, NULL);
+    pthread_mutex_lock(&mtx_thr_sender);
+    
+    if(pthread_create(&thr_sender, NULL, start_sending, (void *) &mtx_thr_sender) != 0) {
+        raise_error("Error starting sender thread.");
+    }
+    
 
 	while(1){
 		if(fgets(user_input_buffer, 250, stdin) != NULL) {
@@ -122,12 +129,12 @@ void _shutdown() {
     
     //pthread_mutex_unlock(&mtx_thr_watchdog);
     pthread_mutex_unlock(&mtx_thr_receiver);
-    //pthread_mutex_unlock(&mtx_thr_sender);
+    pthread_mutex_unlock(&mtx_thr_sender);
     
     /* Join threads */
     //pthread_join(thr_watchdog, NULL);
     pthread_join(thr_receiver, NULL);
-    //pthread_join(thr_sender, NULL);
+    pthread_join(thr_sender, NULL);
     
     stop_logger();
 }

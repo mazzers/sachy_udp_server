@@ -243,6 +243,7 @@ int client_timestamp_remove(client_t *client) {
  * RECV_SEQ_ID
  */
 void send_ack(client_t *client, int seq_id, int resend) {
+    printf("send_ack\n");
     char *buff;
     int len;
     

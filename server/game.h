@@ -13,6 +13,7 @@ typedef struct{
 	unsigned int state;
 	pthread_mutex_t mtx_game;
 	struct timeval timestamp;
+	char *code;
 
 		
 
@@ -27,5 +28,11 @@ void broadcast_game(game_t *game, char *msg, client_t *skip, int send_skip);
 void clear_all_games();
 game_t* get_game_by_index(unsigned int index);
 void release_game(game_t *game);
+void generate_game_code(char *code, unsigned int iteration);
+game_t* get_game_by_code(char *code);
+void remove_game(game_t **game, client_t *skip);
+void leave_game(client_t *client);
+int timeout_game(client_t *client);
+
 
 #endif

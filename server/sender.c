@@ -48,6 +48,7 @@ pthread_mutex_t mtx_cond_packet_change;
  */
 void *start_sending(void *arg) {
     /* Sender mutex */
+    printf("sender: start_sending\n");
     pthread_mutex_t *thr_mutex = (pthread_mutex_t *) arg;
     /* Lowest time from all clients before their packet timeouts */
     int wait;
@@ -80,7 +81,7 @@ void *start_sending(void *arg) {
                         
                         /* Attempt to timeout player in current game */
                         raise_error("timeout_game");
-                        //timeout_game(client);
+                        timeout_game(client);
                         client->state = 0;
                         
                     } 
@@ -111,11 +112,11 @@ void *start_sending(void *arg) {
                 }
                 else if(client_timestamp_remove(client)){
                     if(client->game_index != -1) {
-                        raise_error("leave_game");
-                        //leave_game(client);
+                        //raise_error("leave_game");
+                        leave_game(client);
                     }
-                    raise_error("remove_client");
-                    //remove_client(&client);
+                    //raise_error("remove_client");
+                    remove_client(&client);
 
                 }
                 

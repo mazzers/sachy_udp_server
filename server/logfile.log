@@ -1,63 +1,168 @@
-23.12.14, 11:18:41: Logging to file: logfile.log
+23.12.14, 16:52:06: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 11:18:41: Logger started
-23.12.14, 11:19:12: Logging to file: logfile.log
+23.12.14, 16:52:06: Logger started
+23.12.14, 16:52:06: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 16:52:09: DATA!!!!!
+23.12.14, 16:52:17: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 11:19:12: Logger started
-23.12.14, 11:19:12: Raise - ok
-23.12.14, 11:21:17: Logging to file: logfile.log
+23.12.14, 16:52:17: Logger started
+23.12.14, 16:52:17: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 16:52:20: DATA!!!!!
+23.12.14, 16:55:25: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 11:21:17: Logger started
-23.12.14, 11:21:17: parapappaa
-23.12.14, 12:14:55: Logging to file: logfile.log
+23.12.14, 16:55:25: Logger started
+23.12.14, 16:55:25: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 16:55:28: DATA!!!!!
+23.12.14, 16:55:49: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 12:14:55: Logger started
-23.12.14, 12:14:55: parapappaa
-23.12.14, 12:18:05: Logging to file: logfile.log
+23.12.14, 16:55:49: Logger started
+23.12.14, 16:55:49: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 16:55:51: DATA!!!!!
+23.12.14, 16:56:09: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 12:18:05: Logger started
-23.12.14, 12:18:05: parapappaa
-23.12.14, 12:26:15: Logging to file: logfile.log
+23.12.14, 16:56:09: Logger started
+23.12.14, 16:56:09: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 16:56:11: DATA!!!!!
+23.12.14, 16:56:37: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 12:26:15: Logger started
-23.12.14, 12:26:15: parapappaa
-23.12.14, 12:26:15: Starting server with IP 127.0.0.1 and port 10000
-23.12.14, 12:31:38: Logging to file: logfile.log
+23.12.14, 16:56:37: Logger started
+23.12.14, 16:56:37: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 16:56:39: DATA!!!!!
+23.12.14, 16:56:50: DATA!!!!!
+23.12.14, 16:58:45: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 12:31:38: Logger started
-23.12.14, 12:31:38: parapappaa
-23.12.14, 12:31:38: Starting server with IP 127.0.0.1 and port 10000
-23.12.14, 12:31:51: DATA_IN: CONNECT;9;OK; <--- 127.0.0.1:41359
-23.12.14, 12:32:23: DATA_IN: CREATE_GAME;OK; <--- 127.0.0.1:41359
-23.12.14, 14:25:24: Logging to file: logfile.log
+23.12.14, 16:58:45: Logger started
+23.12.14, 16:58:45: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 16:58:48: DATA!!!!!
+23.12.14, 17:00:09: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 14:25:24: Logger started
-23.12.14, 14:25:24: parapappaa
-23.12.14, 14:25:24: Starting server with IP 127.0.0.1 and port 10000
-23.12.14, 14:25:33: DATA_IN: CONNECT;5;OK; <--- 127.0.0.1:59072
-23.12.14, 14:25:45: DATA_IN: CREATE_GAME;OK; <--- 127.0.0.1:59072
-23.12.14, 14:25:49: DATA_IN: JOIN_GAME;OK;K; <--- 127.0.0.1:59072
-23.12.14, 14:29:11: Logging to file: logfile.log
+23.12.14, 17:00:09: Logger started
+23.12.14, 17:00:09: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:00:10: DATA!!!!!
+23.12.14, 17:01:27: DATA!!!!!
+23.12.14, 17:01:49: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 14:29:11: Logger started
-23.12.14, 14:29:11: parapappaa
-23.12.14, 14:29:11: Starting server with IP 127.0.0.1 and port 10000
-23.12.14, 14:29:25: DATA_IN: CONNECT;1;OK; <--- 127.0.0.1:60733
-23.12.14, 14:29:51: DATA_IN: CONNECT;3;OK; <--- 127.0.0.1:51665
-23.12.14, 14:33:24: Logging to file: logfile.log
+23.12.14, 17:01:49: Logger started
+23.12.14, 17:01:49: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:01:54: DATA!!!!!
+23.12.14, 17:02:47: Logging to file: logfile.log
 
 --------------------------------------------------------
-23.12.14, 14:33:24: Logger started
-23.12.14, 14:33:24: parapappaa
-23.12.14, 14:33:24: Starting server with IP 127.0.0.1 and port 10000
-23.12.14, 14:33:29: DATA_IN: CONNECT;3;OK; <--- 127.0.0.1:51665
-23.12.14, 14:34:03: DATA_IN: CONNECT;1;OK; <--- 127.0.0.1:60733
+23.12.14, 17:02:47: Logger started
+23.12.14, 17:02:47: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:02:50: DATA!!!!!
+23.12.14, 17:10:39: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:10:39: Logger started
+23.12.14, 17:10:39: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:10:43: DATA!!!!!
+23.12.14, 17:12:38: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:12:38: Logger started
+23.12.14, 17:12:38: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:12:39: DATA!!!!!
+23.12.14, 17:12:45: DATA!!!!!
+23.12.14, 17:13:00: DATA!!!!!
+23.12.14, 17:13:00: DATA!!!!!
+23.12.14, 17:13:01: DATA!!!!!
+23.12.14, 17:13:02: DATA!!!!!
+23.12.14, 17:13:02: DATA!!!!!
+23.12.14, 17:13:02: DATA!!!!!
+23.12.14, 17:13:03: DATA!!!!!
+23.12.14, 17:18:41: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:18:41: Logger started
+23.12.14, 17:18:41: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:18:49: DATA!!!!!
+23.12.14, 17:26:04: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:26:04: Logger started
+23.12.14, 17:26:04: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:26:06: DATA!!!!!
+23.12.14, 17:31:49: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:31:49: Logger started
+23.12.14, 17:31:49: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:31:52: DATA!!!!!
+23.12.14, 17:36:01: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:36:01: Logger started
+23.12.14, 17:36:01: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:38:03: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:38:03: Logger started
+23.12.14, 17:38:03: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:38:30: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:38:30: Logger started
+23.12.14, 17:38:30: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:38:33: DATA!!!!!
+23.12.14, 17:39:43: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:39:43: Logger started
+23.12.14, 17:39:43: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:39:52: DATA!!!!!
+23.12.14, 17:43:22: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:43:22: Logger started
+23.12.14, 17:43:22: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:43:30: DATA!!!!!
+23.12.14, 17:52:43: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:52:43: Logger started
+23.12.14, 17:52:43: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:52:49: DATA!!!!!
+23.12.14, 17:53:31: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:53:31: Logger started
+23.12.14, 17:53:31: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:58:09: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 17:58:09: Logger started
+23.12.14, 17:58:09: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 17:58:12: DATA!!!!!
+23.12.14, 18:02:09: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 18:02:09: Logger started
+23.12.14, 18:02:09: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 18:02:12: DATA!!!!!
+23.12.14, 18:02:25: DATA!!!!!
+23.12.14, 18:02:51: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 18:02:51: Logger started
+23.12.14, 18:02:51: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 18:02:54: DATA!!!!!
+23.12.14, 18:12:54: Logging to file: logfile.log
+
+--------------------------------------------------------
+23.12.14, 18:12:54: Logger started
+23.12.14, 18:12:54: Starting server with IP 127.0.0.1 and port 10000
+23.12.14, 18:12:59: DATA!!!!!
+23.12.14, 18:13:04: DATA!!!!!
+23.12.14, 18:13:07: DATA!!!!!
+23.12.14, 18:13:13: DATA!!!!!
+23.12.14, 18:13:31: DATA!!!!!

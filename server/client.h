@@ -1,10 +1,15 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#define RECONNECT_CODE_LEN 4
+
 #include <sys/time.h>
+
 #include "queue.h"
 #include "global.h"
 
+
+extern char *reconnect_code[MAX_CURRENT_CLIENTS];
 extern unsigned int client_num;
 
 typedef struct {
@@ -18,7 +23,7 @@ typedef struct {
 	int pkt_recv_seq_id;
 	struct timeval timestamp;
 	unsigned short state;
-
+	char *reconnect_code;
 	Queue *dgram_queue;
 
 
@@ -33,6 +38,10 @@ void update_client_timestamp(client_t *client);
 void remove_client(client_t **client);
 void clear_client_dgram_queue(client_t *client);
 void clear_all_clients();
+client_t* get_client_by_index(int index);
+int get_client_index_by_rcode(char *code);
+void send_reconnect_code(client_t *client);
+int generate_reconnect_code(char *s, int iteration);
 
 
 
