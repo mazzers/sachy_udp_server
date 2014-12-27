@@ -64,6 +64,7 @@ void gen_random(char *s, const int len) {
  * Checks if thread should stop (mutex is unlocked)
  */
 int stop_thread(pthread_mutex_t *mtx) {
+    //printf("global.c stop_thread\n");
     switch(pthread_mutex_trylock(mtx)) {
         case 0:
             pthread_mutex_unlock(mtx);
@@ -81,6 +82,7 @@ int stop_thread(pthread_mutex_t *mtx) {
  * Generates number from 1 to limit
  */
 int rand_lim(int limit) {
+    printf("global.c: rand_lim\n");
     int divisor = RAND_MAX/(limit+1);
     int retval;
 
@@ -99,6 +101,7 @@ int rand_lim(int limit) {
  * returns 0
  */
 int hostname_to_ip(char *hostname, char *ip) {
+    printf("global.c: hostname_to_ip\n");
     struct addrinfo hints, *res;
     struct sockaddr_in *res_addr;
     
@@ -125,6 +128,7 @@ int hostname_to_ip(char *hostname, char *ip) {
  * Shows amount of time elapsed from server start
  */
 void display_uptime() {
+    printf("globa.c: display_uptime\n");
     struct timeval temp_tv;
     
     gettimeofday(&temp_tv, NULL);

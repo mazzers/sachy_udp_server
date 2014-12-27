@@ -80,7 +80,7 @@ void *start_sending(void *arg) {
                     if(client_timestamp_timeout(client)) {
                         
                         /* Attempt to timeout player in current game */
-                        raise_error("timeout_game");
+                        //raise_error("sender.c: timeout_game");
                         timeout_game(client);
                         client->state = 0;
                         

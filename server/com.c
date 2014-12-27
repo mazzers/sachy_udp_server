@@ -59,6 +59,7 @@ char log_buffer[LOG_BUFFER_SIZE];
  * to pick him up.
  */
 void enqueue_dgram(client_t *client, char *msg, int req_ack) {
+    //printf("com.c: enqueue_dgram\n");
     packet_t *packet;
     int sent_immediately = 0;
     
@@ -108,6 +109,7 @@ void enqueue_dgram(client_t *client, char *msg, int req_ack) {
  * APP_TOKEN;SEQ_ID;MESSAGE
  */
 void build_packet_payload(packet_t *pkt) {
+    //printf("com.c: build_packet_payload\n");
     char *payload;
     char seq_id_buff[11];
     int len;
@@ -134,6 +136,7 @@ void build_packet_payload(packet_t *pkt) {
  * Sends packet immediately to destination
  */
 void send_packet(packet_t *pkt, client_t *client) {
+    //printf("com.c: send_packet\n");
     if(!pkt->state) {
         pkt->seq_id = client->pkt_send_seq_id;
     }
@@ -178,6 +181,7 @@ void send_packet(packet_t *pkt, client_t *client) {
  * and current timeout. If current timeout is lower than wait, updates wait.
  */
 int packet_timestamp_old(packet_t pkt, int *wait) {
+    //printf("com.c: packet_timestamp_old\n");
     int cur_wait = 0;
     struct timeval cur_tv;
     gettimeofday(&cur_tv, NULL);
@@ -222,6 +226,7 @@ int packet_timestamp_old(packet_t pkt, int *wait) {
  * value specified by MAX_CLIENT_NORESPONSE_SEC
  */
 int client_timestamp_timeout(client_t *client) {
+    //printf("com.c client_timestamp_timeout\n");
     struct timeval cur_tv;
     gettimeofday(&cur_tv, NULL);
 
@@ -229,6 +234,7 @@ int client_timestamp_timeout(client_t *client) {
 }
 
 int client_timestamp_remove(client_t *client) {
+    //printf("com.c: client_timestamp_remove\n");
     struct timeval cur_tv;
     gettimeofday(&cur_tv, NULL);
 
@@ -243,6 +249,7 @@ int client_timestamp_remove(client_t *client) {
  * RECV_SEQ_ID
  */
 void send_ack(client_t *client, int seq_id, int resend) {
+    printf("com.c send_ack\n");
     printf("send_ack\n");
     char *buff;
     int len;
@@ -258,10 +265,10 @@ void send_ack(client_t *client, int seq_id, int resend) {
         free(buff);
         
         
-        buff = (char *) malloc((7 + len + strlen(STRINGIFY(APP_TOKEN))));
+        buff = (char *) malloc((8 + len + strlen(STRINGIFY(APP_TOKEN))));
         
         sprintf(buff,
-                "%s;%d;ACK;%d",
+                "%s;ACK;%d;%d;",
                 STRINGIFY(APP_TOKEN),
                 client->pkt_send_seq_id,
                 seq_id
@@ -310,6 +317,7 @@ void send_ack(client_t *client, int seq_id, int resend) {
  * sender thread to wake up.
  */
 void recv_ack(client_t *client, int seq_id) {
+    printf("com.c recv_ack\n");
     packet_t *packet;
     
     if(client != NULL) {
@@ -349,6 +357,7 @@ void recv_ack(client_t *client, int seq_id) {
  * Notifies client with given address that server is currently full.
  */
 void inform_server_full(struct sockaddr_in *addr) {
+    printf("com.c inform_server_full\n");
     char *buff = (char *) malloc(strlen(STRINGIFY(APP_TOKEN)) + 15);
     char addr_str[INET_ADDRSTRLEN];
 
@@ -419,6 +428,7 @@ void inform_server_full(struct sockaddr_in *addr) {
  * Sends message to all connected clients
  */
 void broadcast_clients(char *msg) {
+    printf("com.c: broadcast_clients\n");
     int i = 0;
     client_t *client;
     char *buff = (char *) malloc(strlen(msg) + strlen(STRINGIFY(APP_TOKEN)) + 13);

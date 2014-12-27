@@ -6,11 +6,27 @@
 #include "client.h"
 extern unsigned int game_num;
 
+typedef struct 
+{
+	unsigned int fields[64];
+	int figures[32];
+	char *last_move;
+	struct timeval timestamp;
+	unsigned int state;
+
+
+
+
+}game_state_t;
+
+
+
+
 typedef struct{
 	int player_index[2];
-	int game_index;
-	int player_num;
-	unsigned int state;
+	unsigned int game_index;
+	unsigned short player_num;
+	unsigned short state;
 	pthread_mutex_t mtx_game;
 	struct timeval timestamp;
 	char *code;
@@ -21,6 +37,8 @@ typedef struct{
 
 
 }game_t;
+
+
 
 void create_game(client_t *client);
 void remove_game(game_t **game, client_t *skip);
@@ -33,6 +51,8 @@ game_t* get_game_by_code(char *code);
 void remove_game(game_t **game, client_t *skip);
 void leave_game(client_t *client);
 int timeout_game(client_t *client);
+void send_game_state(client_t *client, game_t *game);
+int game_time_before_timeout(game_t *game);
 
 
 #endif

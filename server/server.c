@@ -107,7 +107,7 @@ void init_server(char *bind_ip, int port){
 // 		{
 // 			printf("cant create game: client==null\n");
 // 		}
-		
+
 
 // 	}else if (strncmp(msg,"JOIN_GAME",9)==0){
 // 		printf("Join game\n");
@@ -195,11 +195,11 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
     /* Log */
 
     sprintf(log_buffer,
-            "DATA_IN: %s <--- %s:%d",
-            dgram,
-	    addr_str,
-	    htons(addr->sin_port)
-            );
+        "DATA_IN: %s <--- %s:%d",
+        dgram,
+        addr_str,
+        htons(addr->sin_port)
+        );
     log_line(log_buffer, LOG_DEBUG);
     printf("log process_dgram\n");
     
@@ -213,149 +213,206 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
     
     /* Check if datagram belongs to us */
     if( (token_len == strlen(STRINGIFY(APP_TOKEN))) &&
-            strncmp(token, STRINGIFY(APP_TOKEN), strlen(STRINGIFY(APP_TOKEN))) == 0 &&
-            packet_seq_id > 0) {
-        
-        type = strtok(NULL, ";");
-    	printf("%s\n",type );
-        
+        strncmp(token, STRINGIFY(APP_TOKEN), strlen(STRINGIFY(APP_TOKEN))) == 0 &&
+        packet_seq_id > 0) {
+        printf("218\n");
+    type = strtok(NULL, ";");
+    printf("%s\n",type );
+
+
         /* New client connection */
-        if(strncmp(type, "CONNECT", 7) == 0) {
-            
-            add_client(addr);            
-            client = get_client_by_addr(addr);
-            
-            if(client) {
-                //send_ack(client, 1, 0);
-                //send_reconnect_code(client);
-                
+    if(strncmp(type, "CONNECT", 7) == 0) {
+
+        add_client(addr);            
+        client = get_client_by_addr(addr);
+        printf("Queue Size: %d\n",queue_size(client->dgram_queue));
+
+        if(client) {
+            send_ack(client, 1, 0);
+            send_reconnect_code(client);
+
                 /* Release client */
-                release_client(client);
-            }
-            
+            release_client(client);
         }
+
+    }
         /* Reconnect */
         //else if(strncmp(type, "RECONNECT", 9) == 0) {            
             // client = get_client_by_index(get_client_index_by_rcode(strtok(NULL, ";")));
-            
+
             // if(client) {
             //     // Sends ACK aswell after resetting clients SEQ_ID 
             //     reconnect_client(client, addr);
-                
+
             //     /* Release client */
             //     release_client(client);
             // }
         //}
         /* Client should already exist */
-         else {
-            client = get_client_by_addr(addr);
-            
-             if(client != NULL) {
-             	printf("client exists\n");
-             }
+    else {
+        printf("251\n");
+        client = get_client_by_addr(addr);
+        printf("Queue Size: %d\n",queue_size(client->dgram_queue));
+        if (client!=NULL)
+        {
+            if (packet_seq_id == client->pkt_recv_seq_id)
+            {
+                /* code */
+
+                printf("client!=NULL\n");
+                if (strncmp(type,"CREATE_GAME", 11)==0)
+                {
+                    send_ack(client,packet_seq_id,0);
+                    create_game(client);
+                    /* code */
+                }else if(strncmp(type,"JOIN_GAME", 9)==0){
+                    printf("join_game accepted\n");
+
+                    //send_ack(client);
+                    send_ack(client, packet_seq_id, 0);
+                    char* code;
+                    game_t *tmp_game;
+                    tmp_game = get_game_by_index(0);
+                    code = tmp_game->code;
+                    release_game(tmp_game);
+                    printf("%s\n",code );
+                    join_game(client,code);
+
+
+                } else if(strncmp(type, "ACK", 3) == 0) {
+                    printf("receive ack\n");
+
+                    recv_ack(client, 
+                        (int) strtoul(strtok(NULL, ";"), NULL, 10));
+
+                    update_client_timestamp(client);
+
+                }
+            }else if(packet_seq_id < client->pkt_recv_seq_id &&
+                strncmp(type, "ACK", 3) != 0) {
+
+                send_ack(client, packet_seq_id, 1);
+
+            }
+            printf("273\n");
+                /* code */
+        }
+        printf("276\n");
+        if(client != NULL) {
+
+                    /* Release client */
+            release_client(client);
+        }
+    }
+
+    printf("278\n");
+}
+printf("280\n");
+}
+
         //         /* Check if expected seq ID matches */
         //         if(packet_seq_id == client->pkt_recv_seq_id) {
-                    
+
         //             /* Get command */
         //             if(strncmp(type, "CREATE_GAME", 11) == 0) {
-                                                
+
         //                 // /* ACK client */
         //                 // send_ack(client, packet_seq_id, 0);
-                        
+
         //                 // create_game(client);
-                        
+
         //             }
         //             /* Receive ACK packet */
         //             else if(strncmp(type, "ACK", 3) == 0) {
-                        
+
         //                 // recv_ack(client, 
         //                 //         (int) strtoul(strtok(NULL, ";"), NULL, 10));
-                        
+
         //                 // update_client_timestamp(client);
-                        
+
         //             }
         //             /* Close client connection */
         //             else if(strncmp(type, "CLOSE", 5) == 0) {
-                        
+
         //                 /* ACK client */
         //                 // send_ack(client, packet_seq_id, 0);
-                        
+
         //                 // leave_game(client);
         //                 // remove_client(&client);
-                        
+
         //             }
         //             /* Keepalive loop */
         //             else if(strncmp(type, "KEEPALIVE", 9) == 0) {
-                        
+
         //                 /* ACK client */
         //                 // send_ack(client, packet_seq_id, 0);
-                        
+
         //             }
         //             /* Join existing game */
         //             else if(strncmp(type, "JOIN_GAME", 9) == 0) {
-                        
+
         //                 // /* ACK client */
         //                 // send_ack(client, packet_seq_id, 0);
-                        
+
         //                 // join_game(client, strtok(NULL, ";"));
-                        
+
         //             }
         //              Leave existing game 
         //             else if(strncmp(type, "LEAVE_GAME", 10) == 0) {
-                        
+
         //                 // /* ACK client */
         //                 // send_ack(client, packet_seq_id, 0);
-                        
+
         //                 // leave_game(client);
         //             }
         //             /* Start game */
         //             else if(strncmp(type, "START_GAME", 10) == 0) {
-                        
+
         //                 // /* ACK client */
         //                 // send_ack(client, packet_seq_id, 0);
-                        
+
         //                 // start_game(client);
         //             }
         //             /* Rolling die */
         //             else if(strncmp(type, "DIE_ROLL", 8) == 0) {
-                        
+
         //                 // /* ACK client */
         //                 // send_ack(client, packet_seq_id, 0);
-                        
+
         //                 // roll_die(client);
         //             }
         //             /* Moving figure */
         //             else if(strncmp(type, "FIGURE_MOVE", 11) == 0) {
-                        
+
         //                 /* ACK client */
         //                 // send_ack(client, packet_seq_id, 0);
-                        
+
         //                 // /* Parse figure id */
         //                 // generic_chbuff = strtok(NULL, ";");
         //                 // generic_uint = (unsigned int) strtoul(generic_chbuff, NULL, 10);
 
         //                 // move_figure(client, generic_uint);
         //             }
-                                        
+
         //         }
         //         /* Packet was already processed */
         //         else if(packet_seq_id < client->pkt_recv_seq_id &&
         //             //     strncmp(type, "ACK", 3) != 0) {
-                    
+
         //             // send_ack(client, packet_seq_id, 1);
-                    
+
         //         }
-                
+
         //         /* If client didnt close conection */
         //         if(client != NULL) {
-                    
+
         //             /* Release client */
         //             release_client(client);
         //         }
-        //     }
-         }
-    }
-}
+            //}
+         //}
+    //}
+
 
 
 
