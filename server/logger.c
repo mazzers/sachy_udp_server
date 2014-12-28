@@ -32,9 +32,9 @@
 #include "logger.h"
 
 /* Current log level, can be changed during runtime */
-int log_level = LOG_WARN;
+int log_level = LOG_ALWAYS;
 /* Current verbose level, can be changed during runtime  */
-int verbose_level = LOG_INFO;
+int verbose_level = LOG_ALWAYS;
 
 /* Output logfile */
 FILE *logfile = NULL;

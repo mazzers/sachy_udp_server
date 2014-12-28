@@ -53,6 +53,7 @@ void leave_game(client_t *client);
 int timeout_game(client_t *client);
 void send_game_state(client_t *client, game_t *game);
 int game_time_before_timeout(game_t *game);
+void button_pushed(client_t *client, int button);
 
 
 #endif

@@ -172,7 +172,7 @@ void init_server(char *bind_ip, int port){
 // 	}
 
 void process_dgram(char *dgram, struct sockaddr_in *addr) {
-	printf("process_dgram\n");
+	//printf("process_dgram\n");
     /* Protocol token */
     char *token;
     /* Token length */
@@ -201,7 +201,7 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
         htons(addr->sin_port)
         );
     log_line(log_buffer, LOG_DEBUG);
-    printf("log process_dgram\n");
+    //printf("log process_dgram\n");
     
     token = strtok(dgram, ";");
     token_len = strlen(token);
@@ -215,8 +215,7 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
     if( (token_len == strlen(STRINGIFY(APP_TOKEN))) &&
         strncmp(token, STRINGIFY(APP_TOKEN), strlen(STRINGIFY(APP_TOKEN))) == 0 &&
         packet_seq_id > 0) {
-        printf("218\n");
-    type = strtok(NULL, ";");
+        type = strtok(NULL, ";");
     printf("%s\n",type );
 
 
@@ -225,7 +224,7 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
 
         add_client(addr);            
         client = get_client_by_addr(addr);
-        printf("Queue Size: %d\n",queue_size(client->dgram_queue));
+        //printf("Queue Size: %d\n",queue_size(client->dgram_queue));
 
         if(client) {
             send_ack(client, 1, 0);
@@ -250,9 +249,9 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
         //}
         /* Client should already exist */
     else {
-        printf("251\n");
+        //printf("251\n");
         client = get_client_by_addr(addr);
-        printf("Queue Size: %d\n",queue_size(client->dgram_queue));
+        //printf("Queue Size: %d\n",queue_size(client->dgram_queue));
         if (client!=NULL)
         {
             if (packet_seq_id == client->pkt_recv_seq_id)
@@ -287,17 +286,28 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
 
                     update_client_timestamp(client);
 
+                } else if (strncmp(type,"BTN1_PUSHED",11)==0){
+                    printf("BTN1_PUSHED\n");
+                    button_pushed(client,1);
+                    send_ack(client,packet_seq_id,0);
+
+                }else if (strncmp(type,"BTN2_PUSHED",11)==0){
+                    printf("BTN2_PUSHED\n");
+                    button_pushed(client,2);
+                    send_ack(client,packet_seq_id,0);
+
                 }
+
             }else if(packet_seq_id < client->pkt_recv_seq_id &&
                 strncmp(type, "ACK", 3) != 0) {
 
                 send_ack(client, packet_seq_id, 1);
 
             }
-            printf("273\n");
+            //printf("273\n");
                 /* code */
         }
-        printf("276\n");
+        //printf("276\n");
         if(client != NULL) {
 
                     /* Release client */
@@ -305,9 +315,9 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
         }
     }
 
-    printf("278\n");
+    //printf("278\n");
 }
-printf("280\n");
+//printf("280\n");
 }
 
         //         /* Check if expected seq ID matches */
