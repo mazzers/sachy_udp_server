@@ -85,11 +85,15 @@ void figure_moved(game_t *game, int startCol, int startRow);
 int validate_move(game_t *game,int startRow,int startCol,int targetRow,int targetCol);
 int get_figure_by_row_col(game_t *game,int startRow, int startCol);
 int is_rook_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol);
-int target_is_fee(game_t *game,int targetRow,int targetCol);
+int target_is_free(game_t *game,int targetRow,int targetCol);
 int target_is_capturable(game_t *game, int startRow,int startCol,int targetRow,int targetCol);
 int color_matched(int source_figure_id,int target_figure_id);
 int are_pieces_between_source_and_target(game_t *game, int startRow,int startCol,int targetRow,int targetCol,int rowInc,int colInc);
 int non_captured_figure_at_location(game_t *game,int targetRow,int targetCol);
 int is_pawn_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol);
+int is_bishop_move_valid(game_t *game, int startRow,int startCol, int targetRow, int targetCol);
+int is_king_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol);
+int is_queen_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol);
+int is_knight_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol);
 
 #endif

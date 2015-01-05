@@ -329,7 +329,7 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
 
             }else if(packet_seq_id < client->pkt_recv_seq_id &&
                 strncmp(type, "ACK", 3) != 0) {
-
+                printf("Resend ack\n");
                 send_ack(client, packet_seq_id, 1);
 
             }

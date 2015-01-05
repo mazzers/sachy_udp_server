@@ -539,6 +539,10 @@ void show_games(client_t *client){
 
 void send_figure_moved(client_t *client,int targetCol,int targetRow, int startCol, int startRow){
 	int i;
+	int figure_id;
+	int figure;
+	int target_figure;
+	int target_figure_id;
 	game_t *game;
 	char *buff;
 	if (client!=NULL){
@@ -553,7 +557,50 @@ void send_figure_moved(client_t *client,int targetCol,int targetRow, int startCo
 			// broadcast_game(game,buff,client,1);
 			// free(buff);
 			// release_game(game);	
-			validate_move(game,startRow,startCol,targetRow,targetCol );
+			i=validate_move(game,startRow,startCol,targetRow,targetCol );
+			if (i==0)
+			{
+				printf("Move is valid\n");
+				
+				figure_id=get_figure_by_row_col(game,startRow,startCol);
+				target_figure_id=get_figure_by_row_col(game,targetRow,targetCol);
+				printf("Moving piece on server side\n");
+				//if there is figure- set it as captured.
+				if (game->game_state.fields[targetRow*8+targetCol]!=-1)
+				{
+					game->game_state.figures[target_figure_id]=1;
+				}
+				game->game_state.fields[startRow*8+startCol]=-1;
+				game->game_state.fields[targetRow*8+targetCol]=figure_id;
+				if (game->game_state.figures[4]==1)
+				{
+					//won black
+					buff=(char *) malloc(11+10);
+					sprintf(buff,"BLACK_WON;");
+					broadcast_game(game,buff,client,1);
+					free(buff);
+
+				}else if (game->game_state.figures[20]==1)
+				{
+					buff=(char *) malloc(11+10);
+					sprintf(buff,"WHITE_WON;");
+					broadcast_game(game,buff,client,1);
+					free(buff);
+				}else{
+				buff=(char *) malloc(11+25);
+				sprintf(buff,"FIGURE_MOVED;%d;%d;%d;%d;",startRow,startCol,targetRow,targetCol);
+				broadcast_game(game,buff,client,1);
+				free(buff);
+				}
+
+			}else{
+				printf("Move is invalid\n");
+				buff=(char *) malloc(11+10);
+				sprintf(buff,"BAD_MOVE;");
+				enqueue_dgram(client,buff,1);
+				free(buff);
+			}
+			release_game(game);	
 		}
 
 	}
@@ -597,6 +644,8 @@ void figure_moved(game_t *game, int startRow, int startCol){
 }
 
 int validate_move(game_t *game,int startRow,int startCol,int targetRow,int targetCol){
+	///add capture piece check, and won state
+	
 	printf("Call validate\n");
 	int figure_id;
 	figure_id = get_figure_by_row_col(game,startRow,startCol);
@@ -615,16 +664,31 @@ int validate_move(game_t *game,int startRow,int startCol,int targetRow,int targe
 		return 1;
 	}
 
-	int move_is_valid=-1;
+	int move_is_valid=1;
 	if (figure_id==0 || figure_id==7 || figure_id==16 || figure_id ==23)
-	{
-		move_is_valid=is_rook_move_valid(game,startRow,startCol,targetRow,targetCol);
-	}else if (figure_id>=8&&figure_id<16 || figure_id>=24 && figure_id<32)
-	{	printf("It's pawn\n");
-		move_is_valid=is_pawn_move_valid(game,startRow,startCol,targetRow,targetCol);
-	}
+		{	printf("It's rook\n");
+	move_is_valid=is_rook_move_valid(game,startRow,startCol,targetRow,targetCol);
+}else if (figure_id>=8&&figure_id<16 || figure_id>=24 && figure_id<32)
+{	printf("It's pawn\n");
+move_is_valid=is_pawn_move_valid(game,startRow,startCol,targetRow,targetCol);
+}else if (figure_id==2 || figure_id==5 || figure_id == 18 || figure_id==21)
+{
+	printf("It's bishop\n");
+	move_is_valid=is_bishop_move_valid(game,startRow,startCol,targetRow,targetCol);
+}else if (figure_id==4 || figure_id==20)
+{
+	printf("It's king\n");
+	move_is_valid=is_king_move_valid(game,startRow,startCol,targetRow,targetCol);
+}else if (figure_id==3 || figure_id==19)
+{
+	printf("It's queen\n");
+	move_is_valid=is_queen_move_valid(game,startRow,startCol,targetRow,targetCol);
+}else if (figure_id==1 || figure_id==6 || figure_id==17 || figure_id==22)
+{	printf("It's knight\n");
+move_is_valid=is_knight_move_valid(game,startRow,startCol,targetRow,targetCol);
+}
 
-	return move_is_valid;
+return move_is_valid;
 
 }
 
@@ -640,12 +704,12 @@ int get_figure_by_row_col(game_t *game,int startRow, int startCol){
 int is_rook_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol){
 	int is_valid=1;
 	//int side;
-	if (target_is_fee(game,targetRow,targetCol)==0 || target_is_capturable(game,startRow,startCol,targetRow,targetCol)==0)
+	if (target_is_free(game,targetRow,targetCol)==0 || target_is_capturable(game,startRow,startCol,targetRow,targetCol)==0)
 	{
 
 
 	}else{
-		return 0;
+		return 1;
 	}
 	int diffRow = targetRow - startRow;
 	int diffCol = targetCol - startCol;
@@ -685,7 +749,7 @@ int is_pawn_move_valid(game_t *game,int startRow,int startCol,int targetRow,int 
 	int is_valid=1;
 	int figure_id;
 	figure_id = get_figure_by_row_col(game,startRow,startCol);
-	if (target_is_fee(game,targetRow,targetCol)==0)
+	if (target_is_free(game,targetRow,targetCol)==0)
 	{
 		printf("Target is free\n");
 		if (startCol==targetCol)
@@ -694,8 +758,8 @@ int is_pawn_move_valid(game_t *game,int startRow,int startCol,int targetRow,int 
 			if (figure_id<16)
 			{
 			//white pawn
-			printf("Moving white one\n");
-			
+				printf("Moving white one\n");
+
 				if (startRow+1 ==targetRow)
 				{
 					printf("Good\n");
@@ -753,7 +817,149 @@ int is_pawn_move_valid(game_t *game,int startRow,int startCol,int targetRow,int 
 
 }
 
-int target_is_fee(game_t *game,int targetRow,int targetCol){
+int is_knight_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol){
+	
+	if (target_is_free(game,targetRow,targetCol)==0 || target_is_capturable(game,startRow,startCol,targetRow,targetCol)==0){
+
+	}else
+	{
+		return 1;
+	}
+	if (startRow+2 ==targetRow && startCol+1==targetCol)
+	{
+		return 0;
+	}else if (startRow+1==targetRow && startCol+2==targetCol)
+	{
+		return 0;
+	}else if (startRow-1==targetRow && startCol+2 ==targetCol)
+	{
+		return 0;
+	}else if (startRow-2==targetRow && startCol+1==targetCol)
+	{
+		return 0;
+	}else if (startRow-2==targetRow && startCol-1==targetCol)
+	{
+		return 0;
+	}else if (startRow-1==targetRow && startCol-2==targetCol)
+	{
+		return 0;
+	}else if (startRow+1==targetRow && startCol-2==targetCol)
+	{
+		/* code */
+		return 0;
+	}else if (startRow+2==targetRow && startCol-1==targetCol)
+	{
+		/* code */
+		return 0;
+	}else{
+		return 1;
+	}
+
+
+}
+
+int is_bishop_move_valid(game_t *game, int startRow,int startCol, int targetRow, int targetCol){
+	int is_valid=1;
+	if (target_is_free(game,targetRow,targetCol)==0 || target_is_capturable(game,startRow,startCol,targetRow,targetCol)==0)
+	{
+		
+	}else{
+		return 1;
+	}
+	int diffRow = targetRow-startRow;
+	int diffCol = targetCol-startCol;
+	if (diffRow ==diffCol && diffCol>0)
+	{
+		if (are_pieces_between_source_and_target(game,startRow,startCol,targetRow,targetCol,+1,+1)==0)
+		{
+			is_valid=1;
+		}else{
+			is_valid=0;
+		}
+		
+	}else if (diffRow==-diffCol && diffCol>0)
+	{
+		if (are_pieces_between_source_and_target(game,startRow,startCol,targetRow,targetCol,-1,+1)==0)
+		{
+			is_valid=1;
+		}else{
+			is_valid=0;
+		}
+	}else if(diffRow==diffCol && diffCol < 0){
+		if (are_pieces_between_source_and_target(game,startRow,startCol,targetRow,targetCol,-1,-1)==0)
+		{
+			is_valid=1;
+		}else{
+			is_valid=0;
+		}
+	}else if (diffRow==-diffCol && diffCol < 0)
+	{
+		if (are_pieces_between_source_and_target(game,startRow,startCol,targetRow,targetCol,+1,-1)==0)
+		{
+			is_valid=1;
+		}else{
+			is_valid=0;
+		}
+	}else{
+		is_valid=1;
+	}
+	return is_valid;
+
+}
+
+int is_king_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol){
+	int is_valid=1;
+	if (target_is_free(game,targetRow,targetCol)==0 || target_is_capturable(game,startRow,startCol,targetRow,targetCol)==0)
+
+	{
+		
+	}else{
+		return 1;
+	}
+	if (startRow+1 ==targetRow && startCol==targetCol)
+	{
+		is_valid=0;
+	}else if (startRow+1==targetRow&&startCol+1==targetCol)
+	{
+		is_valid=0;
+	}else if(startRow==targetRow && startCol+1==targetCol){
+		is_valid=0;
+	}else if (startRow-1==targetRow && startCol+1==targetCol)
+	{
+		is_valid=0;
+	}else if(startRow-1==targetRow && startCol==targetCol){
+		is_valid=0;
+	}else if (startRow-1==targetRow && startCol-1==targetCol)
+	{
+		is_valid=0;
+	}else if (startRow==targetRow && startCol-1==targetCol)
+	{
+		is_valid=0;
+	}else if (startRow+1==targetRow && startCol-1==targetCol)
+	{
+		is_valid=0;
+	}else{
+		is_valid=1;
+	}
+
+	return is_valid;
+}
+
+int is_queen_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol){
+	if(is_bishop_move_valid(game,startRow,startCol,targetRow,targetCol)==00 || is_rook_move_valid(game,startRow,startCol,targetRow,targetCol)==0){
+		return 0;
+	}else{
+		return 1;
+	}
+	
+	
+
+
+
+
+}
+
+int target_is_free(game_t *game,int targetRow,int targetCol){
 	int figure_id;
 	figure_id = get_figure_by_row_col(game,targetRow,targetCol);
 	if (figure_id==-1)
@@ -820,17 +1026,12 @@ int are_pieces_between_source_and_target(game_t *game, int startRow,int startCol
 
 int non_captured_figure_at_location(game_t *game,int targetRow,int targetCol){
 	int figure_id;
-	int figure_state;
 	figure_id = get_figure_by_row_col(game,targetRow,targetCol);
-	figure_state = game->game_state.figures[figure_id];
-	if (figure_state==1)
+	if (figure_id==-1)
 	{
-		//figure isn't captuded
-		return 0;
-	}
-	else{
-		//
 		return 1;
+	}else{
+		return 0;
 	}
 
 
@@ -1036,17 +1237,17 @@ void create_figures(game_t *game){
 	{
 		//white figures
 		game->game_state.fields[i]=i;
-		game->game_state.figures[i]=1;
+		game->game_state.figures[i]=0;
 		//white panws
 		game->game_state.fields[8+i]=i+8;
-		game->game_state.figures[8+i]=1;
+		game->game_state.figures[8+i]=0;
 		
 		////black figures
 		game->game_state.fields[56+i]=i+16;
-		game->game_state.figures[16+i]=1;
+		game->game_state.figures[16+i]=0;
 		//black pawns
 		game->game_state.fields[48+i]=i+24;
-		game->game_state.figures[24+i]=1;
+		game->game_state.figures[24+i]=0;
 		
 	}
 
