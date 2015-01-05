@@ -48,7 +48,7 @@ pthread_mutex_t mtx_cond_packet_change;
  */
 void *start_sending(void *arg) {
     /* Sender mutex */
-    printf("sender: start_sending\n");
+    //printf("sender: start_sending\n");
     pthread_mutex_t *thr_mutex = (pthread_mutex_t *) arg;
     /* Lowest time from all clients before their packet timeouts */
     int wait;

@@ -60,8 +60,7 @@ void *start_receiving(void *arg) {
                 (struct sockaddr *) &client_addr, &client_len);
         
         /* Got data */
-        if(n > 0) {   
-            log_line("DATA!!!!!", LOG_ALWAYS);         
+        if(n > 0) {        
             process_dgram(dgram, &client_addr);
             
             /* Stats */

@@ -25,7 +25,7 @@ unsigned int client_num=0;
 char log_buffer[LOG_BUFFER_SIZE];
 
 void add_client(struct sockaddr_in *addr){
-	printf("Client.c: add_client\n");
+	//printf("Client.c: add_client\n");
 	client_t *new_client;
 	client_t *existing_client;
 	struct sockaddr_in *new_addr;
@@ -87,7 +87,7 @@ void add_client(struct sockaddr_in *addr){
             /* Stats */
             num_connections++;
 		}else{
-			printf("client.c: client exists\n");
+			// printf("client.c: client exists\n");
 			release_client(existing_client);
 
 
@@ -101,7 +101,7 @@ void add_client(struct sockaddr_in *addr){
 
 
 client_t* get_client_by_addr(struct sockaddr_in *addr) {
-	printf("Client.c: get_client_by_addr\n");
+	//printf("Client.c: get_client_by_addr\n");
 	int i = 0;
 	char addr_str[INET_ADDRSTRLEN];
 
@@ -121,14 +121,14 @@ client_t* get_client_by_addr(struct sockaddr_in *addr) {
                     /* Check if address and port matches */
 				if(strncmp(clients[i]->addr_str, addr_str, INET_ADDRSTRLEN) == 0
 					&& (htons((addr)->sin_port) == htons(clients[i]->addr->sin_port) )) {
-					printf("client matched\n");
+					// printf("client matched\n");
 				return clients[i];
 
 			}else{
-				printf("client not matched\n");
+				//rintf("client not matched\n");
 			}
 		}
-		printf("call release_client\n");
+		// printf("call release_client\n");
 		release_client(clients[i]);
 	}
 }
@@ -159,14 +159,14 @@ client_t* get_client_by_index(int index) {
 }
 
 void update_client_timestamp(client_t *client) {
-	printf("Client.c: update_client_timestamp\n");
+	//printf("Client.c: update_client_timestamp\n");
 	if(client != NULL) {
 		gettimeofday(&client->timestamp, NULL);
 	}
 }
 
 void remove_client(client_t **client) {  
-printf("Client.c: remove_client\n");          
+//printf("Client.c: remove_client\n");          
 	if(client != NULL) {
 		sprintf(log_buffer,
 			"Removing client with IP address: %s and port %d",
@@ -197,7 +197,7 @@ printf("Client.c: remove_client\n");
 }
 
 void clear_client_dgram_queue(client_t *client) {
-	printf("Client.c clear_client_dgram_queue\n");
+	//printf("Client.c clear_client_dgram_queue\n");
 	packet_t *packet = queue_front(client->dgram_queue);
 
 	while(packet) {
@@ -215,7 +215,7 @@ void clear_client_dgram_queue(client_t *client) {
 }
 
 void clear_all_clients() {
-	printf("Client.c: clear_all_clients\n");
+	//printf("Client.c: clear_all_clients\n");
 	int i = 0;
 	client_t *client;
 
@@ -229,7 +229,7 @@ void clear_all_clients() {
 }
 
 int generate_reconnect_code(char *s, int iteration)  {
-	printf("Client.c: generate_reconnect_code\n");
+	//printf("Client.c: generate_reconnect_code\n");
 	int existing_index;
 
 	if(iteration > 100) {
@@ -254,21 +254,21 @@ int generate_reconnect_code(char *s, int iteration)  {
  * Sends generated reconnection code to client
  */
  void send_reconnect_code(client_t *client) {
- 	printf("Client.c send_reconnect_code\n");
+ 	//printf("Client.c send_reconnect_code\n");
  	char *buff = (char *) malloc(30 + strlen(client->reconnect_code));
 
  	sprintf(buff,
  		"RECONNECT_CODE;%s",
  		client->reconnect_code
  		);
- 	printf("reconnect_code\n");
+ 	// printf("reconnect_code\n");
  	enqueue_dgram(client, buff, 1);
 
  	free(buff);
  }
 
  int get_client_index_by_rcode(char *code) {
- 	printf("Client.c: get_client_index_by_rcode\n");
+ 	//printf("Client.c: get_client_index_by_rcode\n");
     int i;
     
     for(i = 0; i < MAX_CURRENT_CLIENTS; i++) {

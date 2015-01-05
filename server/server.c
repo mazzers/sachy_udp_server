@@ -205,18 +205,18 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
     
     token = strtok(dgram, ";");
     token_len = strlen(token);
-    printf("%s\n",token );
+    //printf("%s\n",token );
     
     generic_chbuff = strtok(NULL, ";");
     packet_seq_id = (int) strtol(generic_chbuff, NULL, 0);
-    printf("%s\n",generic_chbuff );
+    //printf("%s\n",generic_chbuff );
     
     /* Check if datagram belongs to us */
     if( (token_len == strlen(STRINGIFY(APP_TOKEN))) &&
         strncmp(token, STRINGIFY(APP_TOKEN), strlen(STRINGIFY(APP_TOKEN))) == 0 &&
         packet_seq_id > 0) {
         type = strtok(NULL, ";");
-    printf("%s\n",type );
+    //printf("%s\n",type );
 
 
         /* New client connection */
@@ -254,6 +254,7 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
         //printf("Queue Size: %d\n",queue_size(client->dgram_queue));
         if (client!=NULL)
         {
+            printf("expected id is: %d\n",client->pkt_recv_seq_id );
             if (packet_seq_id == client->pkt_recv_seq_id)
             {
                 /* code */
@@ -269,17 +270,17 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
 
                     //send_ack(client);
                     send_ack(client, packet_seq_id, 0);
-                    char* code;
-                    game_t *tmp_game;
-                    tmp_game = get_game_by_index(0);
-                    code = tmp_game->code;
-                    release_game(tmp_game);
-                    printf("%s\n",code );
-                    join_game(client,code);
+                    //char* code;
+                    //game_t *tmp_game;
+                    //tmp_game = get_game_by_index(0);
+                    //code = tmp_game->code;
+                    //release_game(tmp_game);
+                    //printf("%s\n",code );
+                    join_game(client,strtok(NULL, ";"));
 
 
                 } else if(strncmp(type, "ACK", 3) == 0) {
-                    printf("receive ack\n");
+                    //printf("receive ack\n");
 
                     recv_ack(client, 
                         (int) strtoul(strtok(NULL, ";"), NULL, 10));
@@ -295,6 +296,34 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
                     printf("BTN2_PUSHED\n");
                     button_pushed(client,2);
                     send_ack(client,packet_seq_id,0);
+
+                }else if(strncmp(type,"LEAVE_GAME",10)==0){
+                    send_ack(client,packet_seq_id,0);
+                    leave_game(client);
+
+                }else if (strncmp(type,"START_GAME",10)==0){
+                    send_ack(client,packet_seq_id,0);
+                    start_game(client);
+                }else if(strncmp(type,"SHOW_GAMES",10)==0){
+                    send_ack(client,packet_seq_id,0);
+                    show_games(client);
+                }else if (strncmp(type,"OTHER_PLAYER_MOVE",17)==0){
+                    send_ack(client,packet_seq_id,0);
+                    //ask_other_to_move(client);
+                }else if (strncmp(type,"MOVE",4)==0){
+                    send_ack(client,packet_seq_id,0);
+                    //generic_chbuff = strtok(NULL,";");
+                    //unsigned int startRow = (unsigned int ) strtoul(generic_chbuff,NULL,10);
+                    //generic_chbuff = strtok(NULL,";");
+                    //unsigned int startCol = (unsigned int ) strtoul(generic_chbuff,NULL,10);
+                    //generic_chbuff = strtok(NULL,";");
+                    //unsigned int targetRow = (unsigned int ) strtoul(generic_chbuff,NULL,10);
+                    //generic_chbuff = strtok(NULL,";");
+                    //unsigned int targetCol = (unsigned int ) strtoul(generic_chbuff,NULL,10);
+                    
+
+                    send_figure_moved(client, (int) strtoul(strtok(NULL, ";"), NULL, 10),(int) strtoul(strtok(NULL, ";"), NULL, 10),(int) strtoul(strtok(NULL, ";"), NULL, 10),(int) strtoul(strtok(NULL, ";"), NULL, 10));
+                    
 
                 }
 

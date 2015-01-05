@@ -68,9 +68,7 @@ void enqueue_dgram(client_t *client, char *msg, int req_ack) {
                 "Enqueueing packet with message: %s",
                 msg
                 );
-        printf("Enqueueing packet with message: %s\n",
-                msg
-                );
+       
         
         log_line(log_buffer, LOG_DEBUG);
         
@@ -160,11 +158,7 @@ void send_packet(packet_t *pkt, client_t *client) {
     
     sendto(server_sockfd, pkt->payload, strlen(pkt->payload), 0, (struct sockaddr*) pkt->addr, sizeof(*pkt->addr));
     
-    printf("DATA_OUT: %s ---> %s:%d\n",
-            pkt->payload,
-        client->addr_str,
-        htons(client->addr->sin_port)
-            );
+ 
     sprintf(log_buffer,
             "DATA_OUT: %s ---> %s:%d",
             pkt->payload,
@@ -200,9 +194,7 @@ int packet_timestamp_old(packet_t pkt, int *wait) {
                 "Packet with payload %s timeouted",
                 pkt.payload
                 );
-        printf("Packet with payload %s timeouted\n",
-                pkt.payload
-                );
+     
         log_line(log_buffer, LOG_DEBUG);
         
         return 1;
@@ -222,10 +214,7 @@ int packet_timestamp_old(packet_t pkt, int *wait) {
                 pkt.payload,
                 pkt.seq_id
                 );
-        printf("Packet with payload %s and SEQ_ID %d timeouted\n",
-                pkt.payload,
-                pkt.seq_id
-                );
+     
         log_line(log_buffer, LOG_DEBUG);
     }
 
@@ -262,8 +251,7 @@ int client_timestamp_remove(client_t *client) {
  * RECV_SEQ_ID
  */
 void send_ack(client_t *client, int seq_id, int resend) {
-    printf("com.c send_ack\n");
-    printf("send_ack\n");
+    
     char *buff;
     int len;
     
@@ -302,15 +290,13 @@ void send_ack(client_t *client, int seq_id, int resend) {
 		client->addr_str,
 		htons(client->addr->sin_port)
                 );
-        printf("DATA_OUT: %s ---> %s:%d\n",
-                buff,
-        client->addr_str,
-        htons(client->addr->sin_port)
-                );
+ 
         log_line(log_buffer, LOG_DEBUG);
         
         if(!resend) {
+            printf("recv increased\n");
             client->pkt_recv_seq_id++;
+            printf("%d\n",client->pkt_recv_seq_id );
         }
         
         /* Update client's timestamp */
@@ -334,7 +320,7 @@ void send_ack(client_t *client, int seq_id, int resend) {
  * sender thread to wake up.
  */
 void recv_ack(client_t *client, int seq_id) {
-    printf("com.c recv_ack\n");
+    
     packet_t *packet;
     
     if(client != NULL) {
@@ -343,11 +329,6 @@ void recv_ack(client_t *client, int seq_id) {
             
             if(packet->seq_id == seq_id) {            
                 /* Log */
-                printf("ACK waiting packet with payload %s and SEQ_ID %d\n",
-                        packet->payload,
-                        packet->seq_id
-                        );
-
                 sprintf(log_buffer,
                         "ACK waiting packet with payload %s and SEQ_ID %d",
                         packet->payload,
