@@ -25,6 +25,7 @@ typedef struct {
 	unsigned short state;
 	char *reconnect_code;
 	Queue *dgram_queue;
+	int color;
 
 
 

@@ -51,6 +51,7 @@ void add_client(struct sockaddr_in *addr){
 			new_client->pkt_recv_seq_id = 1;
 			new_client->pkt_send_seq_id = 1;
 			new_client->state = 1;
+			new_client->color =0;
 			new_client->reconnect_code = (char *) malloc(RECONNECT_CODE_LEN + 1);
 			new_client->dgram_queue = malloc(sizeof(Queue));
 

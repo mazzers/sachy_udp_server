@@ -95,5 +95,10 @@ int is_bishop_move_valid(game_t *game, int startRow,int startCol, int targetRow,
 int is_king_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol);
 int is_queen_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol);
 int is_knight_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol);
+void set_next_payer(game_t *game);
+
+void send_player_info(client_t *client, int color);
+void broadcast_game_state(game_t *game);
+void switch_state(game_t *game);
 
 #endif

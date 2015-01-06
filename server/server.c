@@ -264,6 +264,7 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
                 {
                     send_ack(client,packet_seq_id,0);
                     create_game(client);
+                    send_player_info(client,1);
                     /* code */
                 }else if(strncmp(type,"JOIN_GAME", 9)==0){
                     printf("join_game accepted\n");
@@ -277,6 +278,7 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
                     //release_game(tmp_game);
                     //printf("%s\n",code );
                     join_game(client,strtok(NULL, ";"));
+                    send_player_info(client,2);
 
 
                 } else if(strncmp(type, "ACK", 3) == 0) {
@@ -325,7 +327,11 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
                     send_figure_moved(client, (int) strtoul(strtok(NULL, ";"), NULL, 10),(int) strtoul(strtok(NULL, ";"), NULL, 10),(int) strtoul(strtok(NULL, ";"), NULL, 10),(int) strtoul(strtok(NULL, ";"), NULL, 10));
                     
 
+                }else if (strncmp(type,"KEEPALIVE",4)==0)
+                {
+                   send_ack(client, packet_seq_id, 0);
                 }
+
 
             }else if(packet_seq_id < client->pkt_recv_seq_id &&
                 strncmp(type, "ACK", 3) != 0) {
