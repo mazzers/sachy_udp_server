@@ -295,7 +295,7 @@ void send_ack(client_t *client, int seq_id, int resend) {
         
         if(!resend) {
             client->pkt_recv_seq_id++;
-            printf("%d\n",client->pkt_recv_seq_id );
+            
         }
         
         /* Update client's timestamp */

@@ -15,9 +15,9 @@ game_t *games[MAX_CURRENT_CLIENTS];
 
 void create_game(client_t *client){
 	//printf("game.c: create_game\n");
-	char *message;
-	char buff[11];
-	unsigned int message_len;
+	// char *message;
+	char *buff;
+	// unsigned int message_len;
 	int i=0;
 
 	if(client->game_index== -1){
@@ -33,7 +33,9 @@ void create_game(client_t *client){
 		//printf("game.c mutex\n");
 		
 		//printf("here 0\n");
-		game->code = (char *) malloc(GAME_CODE_LEN + 1);    
+		game->code = (char *) malloc(GAME_CODE_LEN + 1);
+		//game->host = (char *) malloc(NAME_LEN+1);
+		//printf("Add game, host name:%s\n",client->name );
 		generate_game_code(game->code, 0);
 		//printf("here\n");
 
@@ -53,13 +55,15 @@ void create_game(client_t *client){
 			create_figures(game);
 			//place_figures(game_t game);
 
-			sprintf(buff, "%d", ( GAME_MAX_LOBBY_TIME_SEC - 1));
-			message_len = strlen(buff) + GAME_CODE_LEN + 14 + 1;
-			message = (char *) malloc(message_len);
+			// sprintf(buff, "%d", ( GAME_MAX_LOBBY_TIME_SEC - 1));
+			// message_len = strlen(buff) + GAME_CODE_LEN + 14 + 1;
+			buff = (char *) malloc(14 + GAME_CODE_LEN);
 
-			sprintf(message, "GAME_CREATED;%s;%d", game->code, GAME_MAX_LOBBY_TIME_SEC - 1);
+			sprintf(buff, "GAME_CREATED;%s;",game->code);
 
-			enqueue_dgram(client, message, 1);
+			enqueue_dgram(client, buff, 1);
+
+			//send_player_info(client,1);
 			
 			sprintf(log_buffer,
 				"Created new game with code %s and index %d",
@@ -68,8 +72,7 @@ void create_game(client_t *client){
 				);
 			log_line(log_buffer, LOG_DEBUG);
 			client->game_index = game->game_index;
-			client->color=COLOR_WHITE;
-			free(message);
+			free(buff);
 
 
 		}
@@ -272,6 +275,7 @@ void leave_game(client_t *client) {
 
 					}
 				}
+				game->state=0;
 				buff = (char *) malloc(11+11);
 
 				sprintf(buff, "CLIENT_LEFT;");
@@ -283,8 +287,9 @@ void leave_game(client_t *client) {
 			
 			
 			client->game_index=-1;
+			client->color=0;
 
-			enqueue_dgram(client,"GAME_LEFT",1);
+			enqueue_dgram(client,"GAME_LEFT;",1);
 
 			//remove_game(&game);
 			
@@ -307,7 +312,7 @@ void leave_game(client_t *client) {
 
 
 int timeout_game(client_t *client) {
-	printf("game.c: timeout_game\n");
+	
 	int i;
 	char buff[40];
 	game_t *game = get_game_by_index(client->game_index);
@@ -394,14 +399,19 @@ void join_game(client_t *client, char* game_code) {
 
                 /* Find spot for player */
 				
-				game->player_index[1] = client->client_index;
+				for(i = 0; i < 2; i++) {
+                    if(game->player_index[i] == -1) {
+                        game->player_index[i] = client->client_index;
+
+                        break;
+                    }
+                }
 
 
                 /* Prepare message */
 				strcpy(buff, "CLIENT_JOINED_GAME;");
 				          /* Set clients game index reference to this game */
 				client->game_index = game->game_index;
-				client->color=COLOR_BLACK;
 
                 /* Send game state to joined client */
 				//send_game_state(client, game);
@@ -420,6 +430,7 @@ void join_game(client_t *client, char* game_code) {
 					);
 
 				log_line(log_buffer, LOG_DEBUG);
+				//send_player_info(client,2);
 
 			}
             /* Game is full */
@@ -434,7 +445,7 @@ void join_game(client_t *client, char* game_code) {
 
 				log_line(log_buffer, LOG_DEBUG);
 
-				enqueue_dgram(client, "GAME_FULL", 1);
+				enqueue_dgram(client, "GAME_FULL;", 1);
 			}
 		}
         /* Game is already running */
@@ -449,7 +460,7 @@ void join_game(client_t *client, char* game_code) {
 
 			log_line(log_buffer, LOG_DEBUG);
 
-			enqueue_dgram(client, "GAME_RUNNING", 1);
+			enqueue_dgram(client, "GAME_RUNNING;", 1);
 		}
 
         /* Release game */
@@ -466,7 +477,7 @@ void join_game(client_t *client, char* game_code) {
 
 		log_line(log_buffer, LOG_DEBUG);
 
-		enqueue_dgram(client, "GAME_NONEXISTENT", 1);
+		enqueue_dgram(client, "GAME_NONEXISTENT;", 1);
 	}
 }
 
@@ -492,7 +503,14 @@ void start_game(client_t *client){
 
 				game->game_state.playing=STATE_WHITE;
 
+
+
+
 				buff = (char *) malloc(16 + 11);
+
+				enqueue_dgram(client,"YOU;WHITE;",1);
+				broadcast_game(game,"YOU;BLACK;",client,0);
+
 				sprintf(buff, 
 					"GAME_STARTED;");
 
@@ -513,53 +531,61 @@ void start_game(client_t *client){
 
 }
 
+int can_player_move(client_t *client, game_t *game){
+	if(client->color==game->game_state.playing){
+		return 0;
+	}else{
+		return 1;
+	}
+}
+
 void switch_state(game_t *game){
-	printf("switch_state\n");
+	
 	int curr = game->game_state.playing;
 	if (curr==STATE_WHITE)
 	{
-		printf("change to black\n");
+		
 		game->game_state.playing=STATE_BLACK;
 	}else{
-		printf("change to white\n");
+		
 		game->game_state.playing=STATE_WHITE;
 	}
 	gettimeofday(&game->game_state.timestamp, NULL);
 
 }
 
-void broadcast_game_state(game_t *game){
-	printf("broadcast_game_state\n");
-	char buff[11+8];
-	sprintf(buff,"STATE;%d;",game->game_state.playing);
-	printf("after buffer\n");
-	broadcast_game(game,buff,NULL,0);
-}
+// void broadcast_game_state(game_t *game){
+// 	char buff[11+8];
+// 	sprintf(buff,"STATE;%d;",game->game_state.playing);
+// 	printf("after buffer\n");
+// 	broadcast_game(game,buff,NULL,0);
+// }
 
-void send_player_info(client_t *client, int color){
-	printf("send_player_info\n");
-	char buff[21];
-	if (client!=NULL)
-	{
-		/* code */
+// void send_player_info(client_t *client, int color){
+// 	//printf("send_player_info\n");
+// 	char buff[21];
+// 	if (client!=NULL)
+// 	{
+// 		/* code */
 
-		if (color==1)
-		{
+// 		if (color==1)
+// 		{
 			
-			sprintf(buff,"YOU;WHITE;");
-			enqueue_dgram(client,buff,1);
+// 			sprintf(buff,"YOU;WHITE;");
+// 			enqueue_dgram(client,buff,1);
 
-		}else{
-			sprintf(buff,"YOU;BLACK;");
-			enqueue_dgram(client,buff,1);
+// 		}else{
+// 			sprintf(buff,"YOU;BLACK;");
+// 			enqueue_dgram(client,buff,1);
 
-		}
-	}
-}
+// 		}
+// 	}
+// }
 
 void show_games(client_t *client){
 	int i;
 	char *buff;
+	game_t *game;
 	if (client!=NULL)
 	{
 		/* code */
@@ -575,17 +601,31 @@ void show_games(client_t *client){
 
 					if (games[i]!=NULL)
 					{
-						sprintf(buff+strlen(buff),"%s;%u;",games[i]->code,games[i]->state);
+						//printf("%s\n",games[i]->host);
+						sprintf(buff+strlen(buff),"%s;%d;",games[i]->code,games[i]->state);
 					}
 				}
 				enqueue_dgram(client,buff,1);
 				free(buff);
 
+			}else{
+			buff=(char *) malloc(11+10);
+			sprintf(buff,"NO_GAMES;");
+			enqueue_dgram(client,buff,1);
+			free(buff);
 			}
-			printf("Game_num ==0\n");
+			
+			//printf("Game_num ==0\n");
 
+		}else{
+			game = get_game_by_index(client->game_index);
+			buff=(char *) malloc(11+11+GAME_CODE_LEN);
+			sprintf(buff,"HAS_GAME;%s;",game->code);
+			enqueue_dgram(client,buff,1);
+			free(buff);
+			release_game(game);
 		}
-		printf("Client has game already\n");
+		//printf("Client has game already\n");
 
 	}
 
@@ -601,67 +641,66 @@ void send_figure_moved(client_t *client,int targetCol,int targetRow, int startCo
 	char *buff;
 	if (client!=NULL){
 		game = get_game_by_index(client->game_index);
-		printf("Start:%d/%d;Target:%d/%d\n",startRow,startCol,targetRow,targetCol );
+		//printf("Start:%d/%d;Target:%d/%d\n",startRow,startCol,targetRow,targetCol );
 		if (game)
 		{	
-			// printf("call figure_moved\n");
-			// figure_moved(game,startRow, startCol);
-			// buff=(char *) malloc(11+25);
-			// sprintf(buff,"FIGURE_MOVED;%d;%d;%d;%d;",startRow,startCol,targetRow,targetCol);
-			// broadcast_game(game,buff,client,1);
-			// free(buff);
-			// release_game(game);	
-			i=validate_move(game,startRow,startCol,targetRow,targetCol );
-			if (i==0)
-			{
-				printf("Move is valid\n");
-				
-				figure_id=get_figure_by_row_col(game,startRow,startCol);
-				target_figure_id=get_figure_by_row_col(game,targetRow,targetCol);
-				printf("Moving piece on server side\n");
+			if(game->state){
+				if(can_player_move(client,game)==0){
+
+
+					i=validate_move(game,startRow,startCol,targetRow,targetCol );
+					if (i==0)
+					{
+				//printf("Move is valid\n");
+
+						figure_id=get_figure_by_row_col(game,startRow,startCol);
+						target_figure_id=get_figure_by_row_col(game,targetRow,targetCol);
+				//printf("Moving piece on server side\n");
 				//if there is figure- set it as captured.
-				if (game->game_state.fields[targetRow*8+targetCol]!=-1)
-				{
-					game->game_state.figures[target_figure_id]=1;
-				}
-				game->game_state.fields[startRow*8+startCol]=-1;
-				game->game_state.fields[targetRow*8+targetCol]=figure_id;
-				if (game->game_state.figures[4]==1)
-				{
+						if (game->game_state.fields[targetRow*8+targetCol]!=-1)
+						{
+							game->game_state.figures[target_figure_id]=1;
+						}
+						game->game_state.fields[startRow*8+startCol]=-1;
+						game->game_state.fields[targetRow*8+targetCol]=figure_id;
+						if (game->game_state.figures[4]==1)
+						{
 					//won black
-					buff=(char *) malloc(11+10);
-					sprintf(buff,"BLACK_WON;");
-					game->state=0;
-					broadcast_game(game,buff,client,1);
-					free(buff);
+							buff=(char *) malloc(11+10);
+							sprintf(buff,"BLACK_WON;");
+							//game->state=1;
+							broadcast_game(game,buff,client,1);
+							free(buff);
 
-				}else if (game->game_state.figures[20]==1)
-				{
-					buff=(char *) malloc(11+10);
-					sprintf(buff,"WHITE_WON;");
-					game->state=0;
-					broadcast_game(game,buff,client,1);
-					free(buff);
-				}else{
-					buff=(char *) malloc(11+25);
-					sprintf(buff,"FIGURE_MOVED;%d;%d;%d;%d;",startRow,startCol,targetRow,targetCol);
-					broadcast_game(game,buff,client,1);
-					switch_state(game);
-					sprintf(buff,"STATE;%d;",game->game_state.playing);
-					broadcast_game(game,buff,client,1);
+						}else if (game->game_state.figures[20]==1)
+						{
+							buff=(char *) malloc(11+10);
+							sprintf(buff,"WHITE_WON;");
+							//game->state=1;
+							broadcast_game(game,buff,client,1);
+							free(buff);
+						}else{
+							buff=(char *) malloc(11+25);
+							sprintf(buff,"FIGURE_MOVED;%d;%d;%d;%d;",startRow,startCol,targetRow,targetCol);
+							broadcast_game(game,buff,client,1);
+							switch_state(game);
+							sprintf(buff,"STATE;%d;",game->game_state.playing);
+							broadcast_game(game,buff,client,1);
 					//broadcast_game_state(game);
-					free(buff);
-				}
+							free(buff);
+						}
 
-			}else{
-				printf("Move is invalid\n");
-				buff=(char *) malloc(11+10);
-				sprintf(buff,"BAD_MOVE;");
-				enqueue_dgram(client,buff,1);
-				free(buff);
+					}else{
+				//printf("Move is invalid\n");
+						buff=(char *) malloc(11+10);
+						sprintf(buff,"BAD_MOVE;");
+						enqueue_dgram(client,buff,1);
+						free(buff);
+					}
+					gettimeofday(&game->timestamp, NULL);
+					gettimeofday(&game->game_state.timestamp, NULL);
+				}
 			}
-			gettimeofday(&game->timestamp, NULL);
-			gettimeofday(&game->game_state.timestamp, NULL);
 
 			release_game(game);	
 		}
@@ -669,51 +708,51 @@ void send_figure_moved(client_t *client,int targetCol,int targetRow, int startCo
 	}
 }
 
-void figure_moved(game_t *game, int startRow, int startCol){
-	int i;
-	char *buff;
-	int figure;
-	int figure_id;
+// void figure_moved(game_t *game, int startRow, int startCol){
+// 	int i;
+// 	char *buff;
+// 	int figure;
+// 	int figure_id;
 
-	if (game)
-	{
-		figure_id=get_figure_by_row_col(game,startRow,startCol);
-		if (figure_id>15)
-		{
-			printf("It's black figure\n");
-			if (figure>=24)
-			{
-				printf("It's black pawn\n");
-			}
-		}else if(figure_id==-1){
-			printf("No figure was found\n");
-		}
-		else{
-			printf("It's white figure\n");
-			if (figure>=8)
-			{
-				printf("It's white pawn\n");
-			}
-		}
-		printf("Figure ID is:%d\n",figure_id);
-			//release_game(game);
-	}
+// 	if (game)
+// 	{
+// 		figure_id=get_figure_by_row_col(game,startRow,startCol);
+// 		if (figure_id>15)
+// 		{
+// 			printf("It's black figure\n");
+// 			if (figure>=24)
+// 			{
+// 				printf("It's black pawn\n");
+// 			}
+// 		}else if(figure_id==-1){
+// 			printf("No figure was found\n");
+// 		}
+// 		else{
+// 			printf("It's white figure\n");
+// 			if (figure>=8)
+// 			{
+// 				printf("It's white pawn\n");
+// 			}
+// 		}
+// 		printf("Figure ID is:%d\n",figure_id);
+// 			//release_game(game);
+// 	}
 
 
-		/* code */
-	//}
-}
+// 		/* code */
+// 	//}
+// }
 
 int validate_move(game_t *game,int startRow,int startCol,int targetRow,int targetCol){
 	///add capture piece check, and won state
 	
-	printf("Call validate\n");
+	
 	int figure_id;
 	figure_id = get_figure_by_row_col(game,startRow,startCol);
 	if (figure_id==-1)
 	{
 		//figure don't exist
-		printf("figure don't exist\n");
+		
 		return 1;
 	}
 	//moved piece match game state
@@ -721,35 +760,35 @@ int validate_move(game_t *game,int startRow,int startCol,int targetRow,int targe
 
 	if (targetRow < 0 || targetRow > 7 || targetCol<0 || targetCol>7)
 	{
-		printf("Wrong targer. Out of board\n");
+		
 		return 1;
 	}
 
 	int move_is_valid=1;
 	if (figure_id==0 || figure_id==7 || figure_id==16 || figure_id ==23)
-		{	printf("It's rook\n");
-	move_is_valid=is_rook_move_valid(game,startRow,startCol,targetRow,targetCol);
-}else if (figure_id>=8&&figure_id<16 || figure_id>=24 && figure_id<32)
-{	printf("It's pawn\n");
-move_is_valid=is_pawn_move_valid(game,startRow,startCol,targetRow,targetCol);
-}else if (figure_id==2 || figure_id==5 || figure_id == 18 || figure_id==21)
-{
-	printf("It's bishop\n");
-	move_is_valid=is_bishop_move_valid(game,startRow,startCol,targetRow,targetCol);
-}else if (figure_id==4 || figure_id==20)
-{
-	printf("It's king\n");
-	move_is_valid=is_king_move_valid(game,startRow,startCol,targetRow,targetCol);
-}else if (figure_id==3 || figure_id==19)
-{
-	printf("It's queen\n");
-	move_is_valid=is_queen_move_valid(game,startRow,startCol,targetRow,targetCol);
-}else if (figure_id==1 || figure_id==6 || figure_id==17 || figure_id==22)
-{	printf("It's knight\n");
-move_is_valid=is_knight_move_valid(game,startRow,startCol,targetRow,targetCol);
-}
+	{	
+		move_is_valid=is_rook_move_valid(game,startRow,startCol,targetRow,targetCol);
+	}else if (figure_id>=8&&figure_id<16 || figure_id>=24 && figure_id<32)
+	{	
+		move_is_valid=is_pawn_move_valid(game,startRow,startCol,targetRow,targetCol);
+	}else if (figure_id==2 || figure_id==5 || figure_id == 18 || figure_id==21)
+	{
 
-return move_is_valid;
+		move_is_valid=is_bishop_move_valid(game,startRow,startCol,targetRow,targetCol);
+	}else if (figure_id==4 || figure_id==20)
+	{
+
+		move_is_valid=is_king_move_valid(game,startRow,startCol,targetRow,targetCol);
+	}else if (figure_id==3 || figure_id==19)
+	{
+
+		move_is_valid=is_queen_move_valid(game,startRow,startCol,targetRow,targetCol);
+	}else if (figure_id==1 || figure_id==6 || figure_id==17 || figure_id==22)
+	{	
+		move_is_valid=is_knight_move_valid(game,startRow,startCol,targetRow,targetCol);
+	}
+
+	return move_is_valid;
 
 }
 
@@ -806,48 +845,48 @@ return is_valid;
 }
 
 int is_pawn_move_valid(game_t *game,int startRow,int startCol,int targetRow,int targetCol){
-	printf("Call pawn validator\n");
+	
 	int is_valid=1;
 	int figure_id;
 	figure_id = get_figure_by_row_col(game,startRow,startCol);
 	if (target_is_free(game,targetRow,targetCol)==0)
 	{
-		printf("Target is free\n");
+		
 		if (startCol==targetCol)
 		{
-			printf("Move is straight\n");
+			
 			if (figure_id<16)
 			{
 			//white pawn
-				printf("Moving white one\n");
+				
 
 				if (startRow+1 ==targetRow)
 				{
-					printf("Good\n");
+					
 					is_valid=0;
 				}else{
-					printf("Bad\n");
+					
 					is_valid=1;
 				}
 			}else{
-				printf("Moving black one\n");
+				
 				if (startRow-1==targetRow)
 				{
-					printf("Black good\n");
+					
 					is_valid=0;
 				}else{
-					printf("Black bad\n");
+					
 					is_valid=1;
 				}
 			}
 
 		}else{
-			printf("Move isn't straight\n");
+			
 			is_valid=1;
 		}
 	}else if (target_is_capturable(game,startRow,startCol,targetRow,targetCol)==0)
 	{	
-		printf("Try to capture\n");
+		
 		if (startCol+1==targetCol || startCol-1==targetCol)
 		{
 			if (figure_id<16)
@@ -871,7 +910,7 @@ int is_pawn_move_valid(game_t *game,int startRow,int startCol,int targetRow,int 
 			is_valid=1;
 		}
 	}
-	printf("Final valid is: %d\n",is_valid );
+	
 	return is_valid;
 
 
@@ -1124,117 +1163,117 @@ int get_figure_field(game_t *game, int figure_id){
 
 
 
-void send_game_state(client_t *client, game_t *game) {
-	printf("game.c send_game_state\n");
-	char *buff;
-	unsigned short release = 0;
-	unsigned short player[2] = {0};
-	unsigned int i;
-	int client_game_index;
-	client_t *cur_client;
+// void send_game_state(client_t *client, game_t *game) {
 
-	if(client != NULL) {
-		if(game == NULL) {
-			game = get_game_by_index(client->game_index);
+// 	char *buff;
+// 	unsigned short release = 0;
+// 	unsigned short player[2] = {0};
+// 	unsigned int i;
+// 	int client_game_index;
+// 	client_t *cur_client;
 
-			release = 1;
-		}
+// 	if(client != NULL) {
+// 		if(game == NULL) {
+// 			game = get_game_by_index(client->game_index);
 
-		if(game) {
-            /* If client is in that game */
-			if(game->game_index == client->game_index) {
-                /* Buffer is set to maximum possible size, but the actual message
-                 * is terminated by 0 so client can get the actual length
-                 */
-                 buff = (char *) malloc(105 + GAME_CODE_LEN + 11);
+// 			release = 1;
+// 		}
 
-                /* Get players that are playing */
-                 for(i = 0; i < 2; i++) {
-                 	if(game->player_index[i] != -1) {
+// 		if(game) {
+//             /* If client is in that game */
+// 			if(game->game_index == client->game_index) {
+//                 /* Buffer is set to maximum possible size, but the actual message
+//                  * is terminated by 0 so client can get the actual length
+//                  */
+//                  buff = (char *) malloc(105 + GAME_CODE_LEN + 11);
 
-                 		if(game->player_index[i] == client->client_index) {
-                 			client_game_index = i;
+//                 /* Get players that are playing */
+//                  for(i = 0; i < 2; i++) {
+//                  	if(game->player_index[i] != -1) {
 
-                 			player[i] = 1;
-                 		}
-                 		else {
-                 			cur_client = get_client_by_index(game->player_index[i]);
+//                  		if(game->player_index[i] == client->client_index) {
+//                  			client_game_index = i;
 
-                 			if(cur_client) {
-                                /* Client is active */
-                 				if(cur_client->state) {
-                 					player[i] = 1;
-                 				}
-                                /* Client timeouted */
-                 				else {
-                 					player[i] = 2;
-                 				}
+//                  			player[i] = 1;
+//                  		}
+//                  		else {
+//                  			cur_client = get_client_by_index(game->player_index[i]);
 
-                                /* Release client */
-                 				release_client(cur_client);
-                 			}
-                 		}
-                 	}
-                 }
+//                  			if(cur_client) {
+//                                 /* Client is active */
+//                  				if(cur_client->state) {
+//                  					player[i] = 1;
+//                  				}
+//                                 /* Client timeouted */
+//                  				else {
+//                  					player[i] = 2;
+//                  				}
 
-                /* game code, game state, 4x player connected, 16x figure position,
-                 * index of currently playing client, game index of connecting player
-                 * and timeout before next state change (lobby timeout, playing timeout)
-                 */
-                 sprintf(buff,
-                 	"GAME_STATE;%s;%u;%u;%u;%u;%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d",
-                 	game->code,
-                 	game->state, 
-                 	player[0],
-                 	player[1],
-                 	client_game_index,
-                 	game->game_state.figures[0],
-                 	game->game_state.figures[1],
-                 	game->game_state.figures[2],
-                 	game->game_state.figures[3],
-                 	game->game_state.figures[4],
-                 	game->game_state.figures[5],
-                 	game->game_state.figures[6],
-                 	game->game_state.figures[7],
-                 	game->game_state.figures[8],
-                 	game->game_state.figures[9],
-                 	game->game_state.figures[10],
-                 	game->game_state.figures[11],
-                 	game->game_state.figures[12],
-                 	game->game_state.figures[13],
-                 	game->game_state.figures[14],
-                 	game->game_state.figures[15],
-                 	game->game_state.figures[16],
-                 	game->game_state.figures[17],
-                 	game->game_state.figures[18],
-                 	game->game_state.figures[19],
-                 	game->game_state.figures[20],
-                 	game->game_state.figures[21],
-                 	game->game_state.figures[22],
-                 	game->game_state.figures[23],
-                 	game->game_state.figures[24],
-                 	game->game_state.figures[25],
-                 	game->game_state.figures[26],
-                 	game->game_state.figures[27],
-                 	game->game_state.figures[28],
-                 	game->game_state.figures[29],
-                 	game->game_state.figures[30],
-                 	game->game_state.figures[31],
-                 	game_time_before_timeout(game)
-                 	);
+//                                 /* Release client */
+//                  				release_client(cur_client);
+//                  			}
+//                  		}
+//                  	}
+//                  }
 
-enqueue_dgram(client, buff, 1);
+//                 /* game code, game state, 4x player connected, 16x figure position,
+//                  * index of currently playing client, game index of connecting player
+//                  * and timeout before next state change (lobby timeout, playing timeout)
+//                  */
+//                  sprintf(buff,
+//                  	"GAME_STATE;%s;%u;%u;%u;%u;%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d;%d;%d;%d:%d",
+//                  	game->code,
+//                  	game->state, 
+//                  	player[0],
+//                  	player[1],
+//                  	client_game_index,
+//                  	game->game_state.figures[0],
+//                  	game->game_state.figures[1],
+//                  	game->game_state.figures[2],
+//                  	game->game_state.figures[3],
+//                  	game->game_state.figures[4],
+//                  	game->game_state.figures[5],
+//                  	game->game_state.figures[6],
+//                  	game->game_state.figures[7],
+//                  	game->game_state.figures[8],
+//                  	game->game_state.figures[9],
+//                  	game->game_state.figures[10],
+//                  	game->game_state.figures[11],
+//                  	game->game_state.figures[12],
+//                  	game->game_state.figures[13],
+//                  	game->game_state.figures[14],
+//                  	game->game_state.figures[15],
+//                  	game->game_state.figures[16],
+//                  	game->game_state.figures[17],
+//                  	game->game_state.figures[18],
+//                  	game->game_state.figures[19],
+//                  	game->game_state.figures[20],
+//                  	game->game_state.figures[21],
+//                  	game->game_state.figures[22],
+//                  	game->game_state.figures[23],
+//                  	game->game_state.figures[24],
+//                  	game->game_state.figures[25],
+//                  	game->game_state.figures[26],
+//                  	game->game_state.figures[27],
+//                  	game->game_state.figures[28],
+//                  	game->game_state.figures[29],
+//                  	game->game_state.figures[30],
+//                  	game->game_state.figures[31],
+//                  	game_time_before_timeout(game)
+//                  	);
 
-free(buff);
-}
+// enqueue_dgram(client, buff, 1);
 
-if(release) {
-                /* Release game */
-	release_game(game);
-}
-}
-}
-}
+// free(buff);
+// }
+
+// if(release) {
+//                 /* Release game */
+// 	release_game(game);
+// }
+// }
+// }
+// }
 
 
 void button_pushed(client_t *client, int button){
@@ -1259,27 +1298,8 @@ void button_pushed(client_t *client, int button){
 
 }
 
-void ask_other_to_move(client_t *client){
-	game_t *game;
-	char buff[10];
-	if (client!=NULL)
-	{
-		game=get_game_by_index(client->game_index);
-		sprintf(buff,"YOUR_MOVE;");
-		broadcast_game(game,buff,client,1);
-		release_game(game);
-	}
-
-}
-
-void place_figures(game_t *game){
- 	//int i=0
- 	//game->game_state.
- 	//figures 0-7 - pawns
- 	//
 
 
-}
 
 void create_figures(game_t *game){
 	int i;

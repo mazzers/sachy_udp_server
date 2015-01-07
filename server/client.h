@@ -1,7 +1,11 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#define RECONNECT_CODE_LEN 4
+#define CODE_LEN 4
+#define NAME_LEN 17
+
+#define COLOR_WHITE 1
+#define COLOR_BLACK 2
 
 #include <sys/time.h>
 
@@ -9,7 +13,7 @@
 #include "global.h"
 
 
-extern char *reconnect_code[MAX_CURRENT_CLIENTS];
+extern char *client_code[MAX_CURRENT_CLIENTS];
 extern unsigned int client_num;
 
 typedef struct {
@@ -23,9 +27,10 @@ typedef struct {
 	int pkt_recv_seq_id;
 	struct timeval timestamp;
 	unsigned short state;
-	char *reconnect_code;
+	char *code;
 	Queue *dgram_queue;
 	int color;
+	char *name;
 
 
 
@@ -40,9 +45,11 @@ void remove_client(client_t **client);
 void clear_client_dgram_queue(client_t *client);
 void clear_all_clients();
 client_t* get_client_by_index(int index);
-int get_client_index_by_rcode(char *code);
-void send_reconnect_code(client_t *client);
-int generate_reconnect_code(char *s, int iteration);
+int get_client_index_by_code(char *code);
+void send_client_code(client_t *client);
+//void send_client_name(client_t *client);
+int generate_client_code(char *s, int iteration);
+void set_client_color(client_t *client, int color);
 
 
 

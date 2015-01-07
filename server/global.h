@@ -24,7 +24,7 @@
 /* Game code length */
 #define GAME_CODE_LEN 5
 /* Maximum time game is in state 0 */
-#define GAME_MAX_LOBBY_TIME_SEC 3600
+#define GAME_MAX_LOBBY_TIME_SEC 300
 /* Maximum time player can take to play */
 #define GAME_MAX_PLAY_TIME_SEC 45
 /* Maximum time game can be in active state without anyone playing */

@@ -7,6 +7,7 @@
 #include "server.h"
 #include "err.h"
 #include "game.h"
+#include "game_watchdog.h"
 #include "logger.h"
 #include "global.h"
 #include "receiver.h"
@@ -15,9 +16,11 @@
 
 pthread_t thr_receiver; 
 pthread_t thr_sender;
+pthread_t thr_watchdog;
 
 pthread_mutex_t mtx_thr_receiver; 
 pthread_mutex_t mtx_thr_sender;
+pthread_mutex_t mtx_thr_watchdog;
 char log_buffer[LOG_BUFFER_SIZE];
 
 
@@ -33,6 +36,13 @@ int run(){
 
 
 	init_server("127.0.0.1",10000);
+
+    pthread_mutex_init(&mtx_thr_watchdog, NULL);
+    pthread_mutex_lock(&mtx_thr_watchdog);
+    
+    if(pthread_create(&thr_watchdog, NULL, start_watchdog, (void *) &mtx_thr_watchdog) != 0) {
+        raise_error("Error starting watchdog thread.");
+    }
 
 	pthread_mutex_init(&mtx_thr_receiver, NULL);
 	pthread_mutex_lock(&mtx_thr_receiver);

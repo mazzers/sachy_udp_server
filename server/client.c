@@ -19,7 +19,7 @@
 
 //clients array
 client_t *clients[MAX_CURRENT_CLIENTS]={NULL};
-char *reconnect_code[MAX_CURRENT_CLIENTS] = {NULL};
+char *client_code[MAX_CURRENT_CLIENTS] = {NULL};
 
 unsigned int client_num=0;
 char log_buffer[LOG_BUFFER_SIZE];
@@ -52,7 +52,10 @@ void add_client(struct sockaddr_in *addr){
 			new_client->pkt_send_seq_id = 1;
 			new_client->state = 1;
 			new_client->color =0;
-			new_client->reconnect_code = (char *) malloc(RECONNECT_CODE_LEN + 1);
+			// new_client->name = malloc(50*sizeof(char));
+			// sprintf(new_client -> name,"%s",name);
+			//new_client->name = (char *) malloc(NAME_LEN+1);
+			new_client->code = (char *) malloc(CODE_LEN + 1);
 			new_client->dgram_queue = malloc(sizeof(Queue));
 
 			pthread_mutex_init(&new_client->mtx_client, NULL);
@@ -74,13 +77,14 @@ void add_client(struct sockaddr_in *addr){
 
 
 			}
-			generate_reconnect_code(new_client->reconnect_code, 0);
-            reconnect_code[new_client->client_index] = new_client->reconnect_code;
+			generate_client_code(new_client->code, 0);
+            client_code[new_client->client_index] = new_client->code;
 
             sprintf(log_buffer,
-                    "Added new client with IP address: %s and port %d",
+                    "Added new client with IP address: %s and port %d. Client's name:%s",
                     new_client->addr_str,
-                    htons(addr->sin_port)
+                    htons(addr->sin_port),
+                    new_client->name
                     );
             
             log_line(log_buffer, LOG_INFO);
@@ -166,6 +170,16 @@ void update_client_timestamp(client_t *client) {
 	}
 }
 
+void set_client_color(client_t *client, int color){
+	if(color==COLOR_WHITE){
+		client->color=COLOR_WHITE;
+	}else if(color==COLOR_BLACK){
+		client->color=COLOR_BLACK;
+	}else{
+		client->color=0;
+	}
+}
+
 void remove_client(client_t **client) {  
 //printf("Client.c: remove_client\n");          
 	if(client != NULL) {
@@ -178,11 +192,14 @@ void remove_client(client_t **client) {
 		log_line(log_buffer, LOG_INFO);
 
 		clients[(*client)->client_index] = NULL;
-        reconnect_code[(*client)->client_index] = NULL;
+        client_code[(*client)->client_index] = NULL;
 
 		free((*client)->addr);
 		free((*client)->addr_str);
-        free((*client)->reconnect_code);
+        free((*client)->code);
+        //free((*client)->name);
+        //printf("before name release\n");
+        //free((*client)->name);
 
 		client_num --;
 
@@ -198,7 +215,6 @@ void remove_client(client_t **client) {
 }
 
 void clear_client_dgram_queue(client_t *client) {
-	//printf("Client.c clear_client_dgram_queue\n");
 	packet_t *packet = queue_front(client->dgram_queue);
 
 	while(packet) {
@@ -229,8 +245,8 @@ void clear_all_clients() {
 	}
 }
 
-int generate_reconnect_code(char *s, int iteration)  {
-	//printf("Client.c: generate_reconnect_code\n");
+int generate_client_code(char *s, int iteration)  {
+
 	int existing_index;
 
 	if(iteration > 100) {
@@ -239,28 +255,24 @@ int generate_reconnect_code(char *s, int iteration)  {
 		return 0;
 	}
 
-	gen_random(s, RECONNECT_CODE_LEN);
-	existing_index = get_client_index_by_rcode(s);
+	gen_random(s, CODE_LEN);
+	existing_index = get_client_index_by_code(s);
 
 	if(existing_index != -1) {
-		generate_reconnect_code(s, iteration++);
+		generate_client_code(s, iteration++);
 	}
 
 	return 1;
 }
 
-/**
- * void send_reconnect_code(client_t *client)
- * 
- * Sends generated reconnection code to client
- */
- void send_reconnect_code(client_t *client) {
+
+ void send_client_code(client_t *client) {
  	//printf("Client.c send_reconnect_code\n");
- 	char *buff = (char *) malloc(30 + strlen(client->reconnect_code));
+ 	char *buff = (char *) malloc(11 + CODE_LEN);
 
  	sprintf(buff,
- 		"RECONNECT_CODE;%s",
- 		client->reconnect_code
+ 		"CLIENT_CODE;%s;",
+ 		client->code
  		);
  	// printf("reconnect_code\n");
  	enqueue_dgram(client, buff, 1);
@@ -268,12 +280,24 @@ int generate_reconnect_code(char *s, int iteration)  {
  	free(buff);
  }
 
- int get_client_index_by_rcode(char *code) {
- 	//printf("Client.c: get_client_index_by_rcode\n");
+ // void send_client_name(client_t *client){
+ // 	char *buff = (char *) malloc(11 + NAME_LEN);
+
+ // 	sprintf(buff,
+ // 		"CLIENT_NAME;%s;",
+ // 		client->name
+ // 		);
+ // 	// printf("reconnect_code\n");
+ // 	enqueue_dgram(client, buff, 1);
+
+ // 	free(buff);
+ // }
+
+ int get_client_index_by_code(char *code) {
     int i;
     
     for(i = 0; i < MAX_CURRENT_CLIENTS; i++) {
-        if(reconnect_code[i] && strncmp(reconnect_code[i], code, RECONNECT_CODE_LEN) == 0) {
+        if(client_code[i] && strncmp(client_code[i], code, CODE_LEN) == 0) {
             return i;
         }
     }
