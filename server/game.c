@@ -119,55 +119,14 @@ void generate_game_code(char *code, unsigned int iteration) {
 	}
 }
 
-void remove_game(game_t **game) {
-	//printf("game.c remove_game\n");
-	int i;
-	client_t *cur;
 
-	if(game != NULL) {
-        /* Log */
-		sprintf(log_buffer,
-			"Removing game with code %s and index %d",
-			(*game)->code,
-			(*game)->game_index
-			);
-
-		log_line(log_buffer, LOG_DEBUG);
-
-
-		for(i = 0; i < 2; i++) {
-			if((*game)->player_index[i] != -1) {
-
-				cur = get_client_by_index((*game)->player_index[i]);
-
-				if(cur) {
-					cur->game_index = -1;
-
-                    /* Release client */
-					release_client(cur);
-				}
-			}
-		}
-
-		free((*game)->code);
-		games[(*game)->game_index] = NULL;
-		game_num--;
-
-		release_game((*game));
-
-		free((*game));
-	}
-
-	*game = NULL;
-}
 
 void broadcast_game(game_t *game, char *msg, client_t *skip, int send_skip) {
-	//printf("game.c: broadcast_game\n");
 	int i;
 	client_t *client;
 	int release;
 
-	if(game != NULL) {        
+	if(game != NULL) {      
 		for(i = 0; i < 2; i++) {
 			client = NULL;
 			release = 1;
@@ -175,10 +134,14 @@ void broadcast_game(game_t *game, char *msg, client_t *skip, int send_skip) {
             /* Player exists */
 			if(game->player_index[i] != -1) {                
                 /* If we want to skip client */
+				
 				if(!skip || game->player_index[i] != skip->client_index) {
+					
 					client = get_client_by_index(game->player_index[i]);
+					
 				}
 				else if(skip && send_skip) {
+					
 					client = skip;
 					release = 0;
 				}
@@ -218,7 +181,6 @@ void clear_all_games() {
 }
 
 game_t* get_game_by_index(unsigned int index) {
-	//printf("game.c: get_game_by_index\n");
 	if(index>= 0 && MAX_CURRENT_CLIENTS > index) {
 		if(games[index]) {
 			pthread_mutex_lock(&games[index]->mtx_game);
@@ -231,7 +193,6 @@ game_t* get_game_by_index(unsigned int index) {
 }
 
 void release_game(game_t *game) {
-	//printf("game.c: release_game\n");
 	if(game && pthread_mutex_trylock(&game->mtx_game) != 0) {
 		pthread_mutex_unlock(&game->mtx_game);
 	}
@@ -239,11 +200,46 @@ void release_game(game_t *game) {
 		log_line("Tried to release non-locked game", LOG_WARN);
 	}
 }
+void remove_game(game_t **game, client_t *skip) {
+	int i;
+	client_t *cur;
 
+	if(game != NULL) {
+        /* Log */
+		sprintf(log_buffer,
+			"Removing game with code %s and index %d",
+			(*game)->code,
+			(*game)->game_index
+			);
+
+		log_line(log_buffer, LOG_DEBUG);
+
+		for (i = 0; i < 2; i++)
+		{
+			if((*game)->player_index[i] != -1 && (!skip || (*game)->player_index[i] != skip->client_index)){
+				cur = get_client_by_index((*game)->player_index[i]);
+				if (cur)
+				{
+					cur->game_index=-1;
+					cur->color=0;
+					release_client(cur);
+				}
+			}
+		}
+		free((*game)->code);
+		games[(*game)->game_index] = NULL;
+		game_num--;
+
+		release_game((*game));
+
+		free((*game));
+	}
+
+	*game = NULL;
+}
 void leave_game(client_t *client) {
-	//printf("game.c: leave_game\n");
 	game_t *game;
-	int i, n;
+	int i, n, k;
 	int len;
 	char *buff;
 
@@ -261,36 +257,47 @@ void leave_game(client_t *client) {
 
 			log_line(log_buffer, LOG_DEBUG);
 
-			//if(game->player_num == 1) {
-			//len = 30 + 11;
-			buff = (char *) malloc(len);
-			//printf("here something\n");
-                /* @TODO: if he wasnt playing do something else */
-                /* Notify other players that one left */
-			sprintf(buff, 
-				"CLIENT_LEFT_GAME;%d;%d;%d", 
-				i, 
-				game->game_state.playing,
-				GAME_MAX_PLAY_TIME_SEC - 1
-				);
+			if (game->player_num==1)
+			{
+				remove_game(&game,client);
+			}else{
+				for (i = 0; i < 2; i++)
+				{
+					if (game->player_index[i] ==client->client_index)
+					{
+						game->player_index[i]==-1;
+						game->player_num--;
 
-			broadcast_game(game, buff, NULL, 0);
+						break;
 
-			free(buff);
+					}
+				}
+				buff = (char *) malloc(11+11);
 
-			//release_game(game);
-			remove_game(&game);
-			client->game_index = -1;
+				sprintf(buff, "CLIENT_LEFT;");
+
+				broadcast_game(game, buff, client, 0);
+
+				free(buff);
+			}
+			
+			
+			client->game_index=-1;
+
+			enqueue_dgram(client,"GAME_LEFT",1);
+
+			//remove_game(&game);
+			
+			//client->game_index = -1;
 
 			//}
 			//else {
 
 				// for(i = 0; i < 2; i++) {
-			enqueue_dgram(client, "GAME_LEFT", 1);
+			//enqueue_dgram(client, "GAME_LEFT", 1);
 
 			if(game) {
                  // Release game 
-				printf("GAME STILL EXIST\n");
 				release_game(game);
 			}
 		}
@@ -298,8 +305,9 @@ void leave_game(client_t *client) {
 	}
 }
 
+
 int timeout_game(client_t *client) {
-	//printf("game.c: timeout_game\n");
+	printf("game.c: timeout_game\n");
 	int i;
 	char buff[40];
 	game_t *game = get_game_by_index(client->game_index);
@@ -308,7 +316,7 @@ int timeout_game(client_t *client) {
 		if(game->state) {
             /* Log */
 			sprintf(log_buffer,
-				"Client with index %d timeouted from game with code %s and index %d, can reconnect",
+				"Client with index %d timeouted from game with code %s and index %d",
 				client->client_index,
 				game->code,
 				game->game_index
@@ -316,37 +324,23 @@ int timeout_game(client_t *client) {
 
 			log_line(log_buffer, LOG_DEBUG);
 
-
-			if(game->player_num > 1) {
-				for(i = 0; i < 2; i++) {
-					if(game->player_index[i] == client->client_index) {
+			if(game->player_num>1){
+				for(i=0; i<2;i++){
+					if(game->player_index[i]==client->client_index){
 						break;
 					}
 				}
-
-                // if(game->game_state.playing == i) {
-                //     set_game_playing(game);
-                // }
-
 				sprintf(buff, 
-					"CLIENT_TIMEOUT;%d;%d;%d", 
-					i, 
-					game->game_state.playing,
-					GAME_MAX_PLAY_TIME_SEC - 1
-					);
+					"CLIENT_TIMEOUT;");
 
 				broadcast_game(game, buff, client, 0);
-
-                /* Update clients timestamp (starts countdown for max timeout time) */
 				update_client_timestamp(client);
-
-                /* Release game */
 				release_game(game);
 
 				return 1;
-			}
-			else {
-				remove_game(&game);
+
+			}else{
+				remove_game(&game,client);
 			}
 		}
 
@@ -359,11 +353,32 @@ int timeout_game(client_t *client) {
 	return 0;
 }
 
+int game_time_play_state_timeout(game_t *game) {
+	struct timeval cur_tv;
+	gettimeofday(&cur_tv, NULL);
+
+	return ( (GAME_MAX_PLAY_STATE_TIME_SEC - (cur_tv.tv_sec - game->game_state.timestamp.tv_sec) ) <= 0);
+}
+
+int game_time_before_timeout(game_t *game) {
+	struct timeval cur_tv;    
+	gettimeofday(&cur_tv, NULL);
+
+    /* Game running */
+	if(game->state) {
+		return (GAME_MAX_PLAY_TIME_SEC - (cur_tv.tv_sec - game->timestamp.tv_sec));
+	}
+    /* Game in lobby */
+	else {
+		return (GAME_MAX_LOBBY_TIME_SEC - (cur_tv.tv_sec - game->timestamp.tv_sec));
+	}
+}
+
 void join_game(client_t *client, char* game_code) {
 	//printf("game.c: join_game\n");
 	int i;
 	game_t *game;
-	char buff[21];
+	char buff[20];
 
     /* Check if client is already in a game */
 	if(client->game_index == -1) {
@@ -378,25 +393,18 @@ void join_game(client_t *client, char* game_code) {
 			if(game->player_num < 2) {
 
                 /* Find spot for player */
-				for(i = 0; i < 2; i++) {
-					if(game->player_index[i] == -1) {
-						game->player_index[i] = client->client_index;
+				
+				game->player_index[1] = client->client_index;
 
-						break;
-					}
-				}
 
                 /* Prepare message */
 				strcpy(buff, "CLIENT_JOINED_GAME;");
-				buff[19] = (char) (((int) '0') + i);
-				buff[20] = (char) ';';
-
-                /* Set clients game index reference to this game */
+				          /* Set clients game index reference to this game */
 				client->game_index = game->game_index;
 				client->color=COLOR_BLACK;
 
                 /* Send game state to joined client */
-				send_game_state(client, game);
+				//send_game_state(client, game);
 
                 /* Broadcast game, skipping current client */
 				broadcast_game(game, buff, client, 1);
@@ -486,10 +494,7 @@ void start_game(client_t *client){
 
 				buff = (char *) malloc(16 + 11);
 				sprintf(buff, 
-					"GAME_STARTED;%d;%d", 
-					game->game_state.playing,
-					GAME_MAX_PLAY_TIME_SEC
-					);
+					"GAME_STARTED;");
 
 				broadcast_game(game, buff, client, 1);
 
@@ -514,12 +519,12 @@ void switch_state(game_t *game){
 	if (curr==STATE_WHITE)
 	{
 		printf("change to black\n");
-		curr=STATE_BLACK;
+		game->game_state.playing=STATE_BLACK;
 	}else{
 		printf("change to white\n");
-		curr=STATE_WHITE;
+		game->game_state.playing=STATE_WHITE;
 	}
-	broadcast_game_state(game);
+	gettimeofday(&game->game_state.timestamp, NULL);
 
 }
 
@@ -527,6 +532,7 @@ void broadcast_game_state(game_t *game){
 	printf("broadcast_game_state\n");
 	char buff[11+8];
 	sprintf(buff,"STATE;%d;",game->game_state.playing);
+	printf("after buffer\n");
 	broadcast_game(game,buff,NULL,0);
 }
 
@@ -625,6 +631,7 @@ void send_figure_moved(client_t *client,int targetCol,int targetRow, int startCo
 					//won black
 					buff=(char *) malloc(11+10);
 					sprintf(buff,"BLACK_WON;");
+					game->state=0;
 					broadcast_game(game,buff,client,1);
 					free(buff);
 
@@ -632,6 +639,7 @@ void send_figure_moved(client_t *client,int targetCol,int targetRow, int startCo
 				{
 					buff=(char *) malloc(11+10);
 					sprintf(buff,"WHITE_WON;");
+					game->state=0;
 					broadcast_game(game,buff,client,1);
 					free(buff);
 				}else{
@@ -639,6 +647,9 @@ void send_figure_moved(client_t *client,int targetCol,int targetRow, int startCo
 					sprintf(buff,"FIGURE_MOVED;%d;%d;%d;%d;",startRow,startCol,targetRow,targetCol);
 					broadcast_game(game,buff,client,1);
 					switch_state(game);
+					sprintf(buff,"STATE;%d;",game->game_state.playing);
+					broadcast_game(game,buff,client,1);
+					//broadcast_game_state(game);
 					free(buff);
 				}
 
@@ -649,6 +660,9 @@ void send_figure_moved(client_t *client,int targetCol,int targetRow, int startCo
 				enqueue_dgram(client,buff,1);
 				free(buff);
 			}
+			gettimeofday(&game->timestamp, NULL);
+			gettimeofday(&game->game_state.timestamp, NULL);
+
 			release_game(game);	
 		}
 
@@ -1084,7 +1098,15 @@ int non_captured_figure_at_location(game_t *game,int targetRow,int targetCol){
 
 }
 
-
+int get_figure_field(game_t *game, int figure_id){
+	int i;
+	for(i=0;i<64;i++){
+		if(game->game_state.fields[i]==figure_id){
+			return i;
+		}
+	}
+	return 100;
+}
 
 
 
@@ -1213,20 +1235,7 @@ if(release) {
 }
 }
 }
-int game_time_before_timeout(game_t *game) {
-	printf("game.c: game_time_before_timeout\n");
-	struct timeval cur_tv;    
-	gettimeofday(&cur_tv, NULL);
 
-    /* Game running */
-	if(game->state) {
-		return (GAME_MAX_PLAY_TIME_SEC - (cur_tv.tv_sec - game->timestamp.tv_sec));
-	}
-    /* Game in lobby */
-	else {
-		return (GAME_MAX_LOBBY_TIME_SEC - (cur_tv.tv_sec - game->timestamp.tv_sec));
-	}
-}
 
 void button_pushed(client_t *client, int button){
 	//client_t *cur_client;

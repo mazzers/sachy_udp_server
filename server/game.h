@@ -62,7 +62,7 @@ typedef struct{
 
 
 void create_game(client_t *client);
-void remove_game(game_t **game);
+void remove_game(game_t **game, client_t *skip);
 void broadcast_game(game_t *game, char *msg, client_t *skip, int send_skip);
 void clear_all_games();
 game_t* get_game_by_index(unsigned int index);
@@ -100,5 +100,8 @@ void set_next_payer(game_t *game);
 void send_player_info(client_t *client, int color);
 void broadcast_game_state(game_t *game);
 void switch_state(game_t *game);
+int game_time_play_state_timeout(game_t *game);
+int game_time_before_timeout(game_t *game) ;
+int get_figure_field(game_t *game, int figure_id);
 
 #endif

@@ -254,12 +254,12 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
         //printf("Queue Size: %d\n",queue_size(client->dgram_queue));
         if (client!=NULL)
         {
-            printf("expected id is: %d\n",client->pkt_recv_seq_id );
+            // printf("expected id is: %d\n",client->pkt_recv_seq_id );
             if (packet_seq_id == client->pkt_recv_seq_id)
             {
                 /* code */
 
-                printf("client!=NULL\n");
+                // printf("client!=NULL\n");
                 if (strncmp(type,"CREATE_GAME", 11)==0)
                 {
                     send_ack(client,packet_seq_id,0);
@@ -267,7 +267,7 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
                     send_player_info(client,1);
                     /* code */
                 }else if(strncmp(type,"JOIN_GAME", 9)==0){
-                    printf("join_game accepted\n");
+                    // printf("join_game accepted\n");
 
                     //send_ack(client);
                     send_ack(client, packet_seq_id, 0);
@@ -289,16 +289,6 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
 
                     update_client_timestamp(client);
 
-                } else if (strncmp(type,"BTN1_PUSHED",11)==0){
-                    printf("BTN1_PUSHED\n");
-                    button_pushed(client,1);
-                    send_ack(client,packet_seq_id,0);
-
-                }else if (strncmp(type,"BTN2_PUSHED",11)==0){
-                    printf("BTN2_PUSHED\n");
-                    button_pushed(client,2);
-                    send_ack(client,packet_seq_id,0);
-
                 }else if(strncmp(type,"LEAVE_GAME",10)==0){
                     send_ack(client,packet_seq_id,0);
                     leave_game(client);
@@ -309,24 +299,10 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
                 }else if(strncmp(type,"SHOW_GAMES",10)==0){
                     send_ack(client,packet_seq_id,0);
                     show_games(client);
-                }else if (strncmp(type,"OTHER_PLAYER_MOVE",17)==0){
-                    send_ack(client,packet_seq_id,0);
-                    //ask_other_to_move(client);
                 }else if (strncmp(type,"MOVE",4)==0){
                     send_ack(client,packet_seq_id,0);
-                    //generic_chbuff = strtok(NULL,";");
-                    //unsigned int startRow = (unsigned int ) strtoul(generic_chbuff,NULL,10);
-                    //generic_chbuff = strtok(NULL,";");
-                    //unsigned int startCol = (unsigned int ) strtoul(generic_chbuff,NULL,10);
-                    //generic_chbuff = strtok(NULL,";");
-                    //unsigned int targetRow = (unsigned int ) strtoul(generic_chbuff,NULL,10);
-                    //generic_chbuff = strtok(NULL,";");
-                    //unsigned int targetCol = (unsigned int ) strtoul(generic_chbuff,NULL,10);
-                    
-
                     send_figure_moved(client, (int) strtoul(strtok(NULL, ";"), NULL, 10),(int) strtoul(strtok(NULL, ";"), NULL, 10),(int) strtoul(strtok(NULL, ";"), NULL, 10),(int) strtoul(strtok(NULL, ";"), NULL, 10));
                     
-
                 }else if (strncmp(type,"KEEPALIVE",4)==0)
                 {
                    send_ack(client, packet_seq_id, 0);
@@ -335,7 +311,7 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
 
             }else if(packet_seq_id < client->pkt_recv_seq_id &&
                 strncmp(type, "ACK", 3) != 0) {
-                printf("Resend ack\n");
+                // printf("Resend ack\n");
                 send_ack(client, packet_seq_id, 1);
 
             }
@@ -354,116 +330,6 @@ void process_dgram(char *dgram, struct sockaddr_in *addr) {
 }
 //printf("280\n");
 }
-
-        //         /* Check if expected seq ID matches */
-        //         if(packet_seq_id == client->pkt_recv_seq_id) {
-
-        //             /* Get command */
-        //             if(strncmp(type, "CREATE_GAME", 11) == 0) {
-
-        //                 // /* ACK client */
-        //                 // send_ack(client, packet_seq_id, 0);
-
-        //                 // create_game(client);
-
-        //             }
-        //             /* Receive ACK packet */
-        //             else if(strncmp(type, "ACK", 3) == 0) {
-
-        //                 // recv_ack(client, 
-        //                 //         (int) strtoul(strtok(NULL, ";"), NULL, 10));
-
-        //                 // update_client_timestamp(client);
-
-        //             }
-        //             /* Close client connection */
-        //             else if(strncmp(type, "CLOSE", 5) == 0) {
-
-        //                 /* ACK client */
-        //                 // send_ack(client, packet_seq_id, 0);
-
-        //                 // leave_game(client);
-        //                 // remove_client(&client);
-
-        //             }
-        //             /* Keepalive loop */
-        //             else if(strncmp(type, "KEEPALIVE", 9) == 0) {
-
-        //                 /* ACK client */
-        //                 // send_ack(client, packet_seq_id, 0);
-
-        //             }
-        //             /* Join existing game */
-        //             else if(strncmp(type, "JOIN_GAME", 9) == 0) {
-
-        //                 // /* ACK client */
-        //                 // send_ack(client, packet_seq_id, 0);
-
-        //                 // join_game(client, strtok(NULL, ";"));
-
-        //             }
-        //              Leave existing game 
-        //             else if(strncmp(type, "LEAVE_GAME", 10) == 0) {
-
-        //                 // /* ACK client */
-        //                 // send_ack(client, packet_seq_id, 0);
-
-        //                 // leave_game(client);
-        //             }
-        //             /* Start game */
-        //             else if(strncmp(type, "START_GAME", 10) == 0) {
-
-        //                 // /* ACK client */
-        //                 // send_ack(client, packet_seq_id, 0);
-
-        //                 // start_game(client);
-        //             }
-        //             /* Rolling die */
-        //             else if(strncmp(type, "DIE_ROLL", 8) == 0) {
-
-        //                 // /* ACK client */
-        //                 // send_ack(client, packet_seq_id, 0);
-
-        //                 // roll_die(client);
-        //             }
-        //             /* Moving figure */
-        //             else if(strncmp(type, "FIGURE_MOVE", 11) == 0) {
-
-        //                 /* ACK client */
-        //                 // send_ack(client, packet_seq_id, 0);
-
-        //                 // /* Parse figure id */
-        //                 // generic_chbuff = strtok(NULL, ";");
-        //                 // generic_uint = (unsigned int) strtoul(generic_chbuff, NULL, 10);
-
-        //                 // move_figure(client, generic_uint);
-        //             }
-
-        //         }
-        //         /* Packet was already processed */
-        //         else if(packet_seq_id < client->pkt_recv_seq_id &&
-        //             //     strncmp(type, "ACK", 3) != 0) {
-
-        //             // send_ack(client, packet_seq_id, 1);
-
-        //         }
-
-        //         /* If client didnt close conection */
-        //         if(client != NULL) {
-
-        //             /* Release client */
-        //             release_client(client);
-        //         }
-            //}
-         //}
-    //}
-
-
-
-
-
-
-
 
 
 

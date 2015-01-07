@@ -294,7 +294,6 @@ void send_ack(client_t *client, int seq_id, int resend) {
         log_line(log_buffer, LOG_DEBUG);
         
         if(!resend) {
-            printf("recv increased\n");
             client->pkt_recv_seq_id++;
             printf("%d\n",client->pkt_recv_seq_id );
         }
@@ -360,7 +359,7 @@ void recv_ack(client_t *client, int seq_id) {
  * Notifies client with given address that server is currently full.
  */
 void inform_server_full(struct sockaddr_in *addr) {
-    printf("com.c inform_server_full\n");
+    
     char *buff = (char *) malloc(strlen(STRINGIFY(APP_TOKEN)) + 15);
     char addr_str[INET_ADDRSTRLEN];
 
@@ -431,7 +430,7 @@ void inform_server_full(struct sockaddr_in *addr) {
  * Sends message to all connected clients
  */
 void broadcast_clients(char *msg) {
-    printf("com.c: broadcast_clients\n");
+    
     int i = 0;
     client_t *client;
     char *buff = (char *) malloc(strlen(msg) + strlen(STRINGIFY(APP_TOKEN)) + 13);
