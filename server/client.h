@@ -1,9 +1,8 @@
 #ifndef CLIENT_H
 #define CLIENT_H
-
+/*Client ID len*/
 #define CODE_LEN 4
-#define NAME_LEN 17
-
+/*Client's colors*/
 #define COLOR_WHITE 1
 #define COLOR_BLACK 2
 
@@ -17,20 +16,30 @@ extern char *client_code[MAX_CURRENT_CLIENTS];
 extern unsigned int client_num;
 
 typedef struct {
-
+	/*Client address*/
 	struct sockaddr_in *addr;
+	/*CLient addr as string*/
 	char *addr_str;
+	/*Client index*/
 	int client_index;
+	/*Client game index*/
 	int game_index;
+	/*Client mutex*/
 	pthread_mutex_t mtx_client;
+	/*Client outgoing sequence*/
 	int pkt_send_seq_id;
+	/*Client incoming sequence*/
 	int pkt_recv_seq_id;
+	/*Last activity timestamp*/
 	struct timeval timestamp;
+	/*Client state*/
 	unsigned short state;
+	/*Client ID*/
 	char *code;
+	/*Client queue of messages*/
 	Queue *dgram_queue;
+	/*Client color*/
 	int color;
-	char *name;
 
 
 
@@ -47,7 +56,6 @@ void clear_all_clients();
 client_t* get_client_by_index(int index);
 int get_client_index_by_code(char *code);
 void send_client_code(client_t *client);
-//void send_client_name(client_t *client);
 int generate_client_code(char *s, int iteration);
 void set_client_color(client_t *client, int color);
 

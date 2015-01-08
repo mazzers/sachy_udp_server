@@ -1,26 +1,3 @@
-/** 
- * -----------------------------------------------------------------------------
- * Clovece nezlob se (Server) - simple board game
- * 
- * Server for board game Clovece nezlob se using UDP datagrams for communication
- * with clients and SEND-AND-WAIT method to ensure that all packets arrive
- * and that they arrive in correct order. 
- * 
- * Semestral work for "Uvod do pocitacovich siti" KIV/UPS at
- * University of West Bohemia.
- * 
- * -----------------------------------------------------------------------------
- * 
- * File: queue.c
- * Description: Queue implementation for outgoing packets
- * 
- * -----------------------------------------------------------------------------
- * 
- * @author: Martin Kucera, 2014
- * @version: 1.02
- * 
- */
-
 /*****
 ** Queue.h
 ** - defines a generic FIFO queue structure

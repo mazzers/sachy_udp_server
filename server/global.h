@@ -4,16 +4,15 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 
-#define MAX_CURRENT_CLIENTS 100
-#define MAX_CURRENT_GAMES 5
 
 
 
-/* Application token identifying packets */
-#define APP_TOKEN A11B0529P
-/* Number of maximum concurrent clients (should be divisible by 4) */
-//#define MAX_CONCURRENT_CLIENTS 100
-/* Largest possible received dgram, indicates buffer size */
+
+/* Protocol token */
+#define TOKEN 1337L17
+/* Max clients */
+#define MAX_CURRENT_CLIENTS 50
+/* Max incoming message */
 #define MAX_DGRAM_SIZE 512
 /* Maximum number of microseconds tolerable before resending packet */
 #define MAX_PACKET_AGE_USEC 500000

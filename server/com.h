@@ -1,66 +1,42 @@
-/** 
- * -----------------------------------------------------------------------------
- * Clovece nezlob se (Server) - simple board game
- * 
- * Server for board game Clovece nezlob se using UDP datagrams for communication
- * with clients and SEND-AND-WAIT method to ensure that all packets arrive
- * and that they arrive in correct order. 
- * 
- * Semestral work for "Uvod do pocitacovich siti" KIV/UPS at
- * University of West Bohemia.
- * 
- * -----------------------------------------------------------------------------
- * 
- * File: com.c
- * Description: Is responsible for all communication with connected clients
- *              (sending datagrams, receiving and sending ACKs..)
- * 
- * -----------------------------------------------------------------------------
- * 
- * @author: Martin Kucera, 2014
- * @version: 1.02
- * 
- */
-
 #ifndef COM_H
 #define	COM_H
 
 #include <time.h>
-
 #include "client.h"
 
-/* Number of sent bytes */
-extern unsigned int sent_bytes;
-/* Number of sent datagrams */
-extern unsigned int sent_dgrams;
-/* Number of received bytes */
-extern unsigned int recv_bytes;
-/* Number of received datagrams */
-extern unsigned int recv_dgrams;
-/* Number of client connections (total) */
+/*Total number of clients */
 extern unsigned int num_connections;
 
+/*Sent bytes counter */
+extern unsigned int sent_bytes;
+/*Sent dgrams counter */
+extern unsigned int sent_dgrams;
+/*Reveived bytes counter */
+extern unsigned int recv_bytes;
+/*Received dgrams counter */
+extern unsigned int recv_dgrams;
+
+
 typedef struct {
-    /* Packet sequential ID */
+    /* Packet ID */
     int seq_id;
-    /* Packet's payload */
-    char *payload;
+    /* Packet's message */
+    char *message;
     /* Raw message */
-    char *msg;
-    /* Destination address */
+    char *raw_msg;
+    /* Client address */
     struct sockaddr_in *addr;
-    /* Last communication timestamp */
+    /* Packet timestamp */
     struct timeval timestamp;
-    /* State - 0 new, 1 waiting for ACK */
+    /* Packet state. 0-new. 1-sent and waiting for ack*/
     unsigned short state;
-    /* Flag indicating if packet requires ACK */
+    /* ACK requirement*/
     unsigned short req_ack;
     
 } packet_t;
 
-/* Function prototypes */
 void enqueue_dgram(client_t *client, char *msg, int req_ack);
-void build_packet_payload(packet_t *pkt);
+void add_packet_mesasge(packet_t *pkt);
 void send_packet(packet_t *pkt, client_t *client);
 int packet_timestamp_old(packet_t pkt, int *wait);
 int client_timestamp_timeout(client_t *client);

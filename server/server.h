@@ -2,9 +2,9 @@
 #define SERVER_H
 
 #include <netinet/in.h>
-
+/*Server socket*/
 extern int server_sockfd;
-
+/*Server start time*/
 extern struct timeval ts_start;
 
 

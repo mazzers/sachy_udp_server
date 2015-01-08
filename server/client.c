@@ -1,14 +1,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <unistd.h>
-
 #include "client.h"
 #include "client.h"
 #include "queue.h"
@@ -17,15 +16,23 @@
 #include "game.h"
 #include "server.h"
 
-//clients array
+/*Array of clients*/
 client_t *clients[MAX_CURRENT_CLIENTS]={NULL};
+/*Array of client id*/
 char *client_code[MAX_CURRENT_CLIENTS] = {NULL};
-
+/*Client count*/
 unsigned int client_num=0;
+/*Log buffer*/
 char log_buffer[LOG_BUFFER_SIZE];
 
+/*
+___________________________________________________________
+
+    Add new client. Place him into clients array.
+    Create client's packet queue. 
+___________________________________________________________
+*/
 void add_client(struct sockaddr_in *addr){
-	//printf("Client.c: add_client\n");
 	client_t *new_client;
 	client_t *existing_client;
 	struct sockaddr_in *new_addr;
@@ -33,16 +40,13 @@ void add_client(struct sockaddr_in *addr){
 
 	if (client_num < MAX_CURRENT_CLIENTS)
 	{
-		//printf("client_num < MAX_CURRENT_CLIENTS\n");
 		existing_client = get_client_by_addr(addr);
-		//printf("existing_client = get_client_by_addr(addr)\n");
 		if (existing_client==NULL)
 		{
-
-			//printf("client.c: it is new client\n");
 			new_client = (client_t *) malloc(sizeof(client_t));
-
 			new_addr = (struct sockaddr_in *) malloc(sizeof(struct sockaddr_in));
+
+			/*Allocates all needed memory and defines new client values*/
 
 			memcpy(new_addr, addr, sizeof(struct sockaddr_in));
 			new_client->addr = new_addr;
@@ -52,17 +56,19 @@ void add_client(struct sockaddr_in *addr){
 			new_client->pkt_send_seq_id = 1;
 			new_client->state = 1;
 			new_client->color =0;
-			// new_client->name = malloc(50*sizeof(char));
-			// sprintf(new_client -> name,"%s",name);
-			//new_client->name = (char *) malloc(NAME_LEN+1);
 			new_client->code = (char *) malloc(CODE_LEN + 1);
 			new_client->dgram_queue = malloc(sizeof(Queue));
+			
+			/*Initiate client's mutex*/
 
 			pthread_mutex_init(&new_client->mtx_client, NULL);
 			queue_init(new_client->dgram_queue);
 
 			inet_ntop(AF_INET, &addr->sin_addr, new_client->addr_str, INET_ADDRSTRLEN);
+			/*Set up client timestamp*/
 			update_client_timestamp(new_client);
+
+			/*Place new client to clients array*/
 
 			for(i=0;i<MAX_CURRENT_CLIENTS;i++){
 				if(clients[i]==NULL){
@@ -77,63 +83,57 @@ void add_client(struct sockaddr_in *addr){
 
 
 			}
+			/*Generate client id*/
 			generate_client_code(new_client->code, 0);
-            client_code[new_client->client_index] = new_client->code;
+			client_code[new_client->client_index] = new_client->code;
 
-            sprintf(log_buffer,
-                    "Added new client with IP address: %s and port %d. Client's name:%s",
-                    new_client->addr_str,
-                    htons(addr->sin_port),
-                    new_client->name
-                    );
-            
-            log_line(log_buffer, LOG_INFO);
-            
-            /* Stats */
-            num_connections++;
+			sprintf(log_buffer,
+				"New client. IP: %s port: %d.",
+				new_client->addr_str,
+				htons(addr->sin_port)
+				);
+
+			log_line(log_buffer, LOG_INFO);
+
+            /* Increase number of connected clients */
+			num_connections++;
 		}else{
-			// printf("client.c: client exists\n");
 			release_client(existing_client);
 
 
 		}
 		
 	}else{
-		printf("New client tried to connect but server is full\n");
+		printf("New clients can't connect. Server has reached clients limit.\n");
 	}
 }
 
+/*
+___________________________________________________________
 
-
+    Return client by inet address.
+___________________________________________________________
+*/
 client_t* get_client_by_addr(struct sockaddr_in *addr) {
-	//printf("Client.c: get_client_by_addr\n");
 	int i = 0;
 	char addr_str[INET_ADDRSTRLEN];
 
 	inet_ntop(AF_INET, &(addr)->sin_addr, addr_str, INET_ADDRSTRLEN);
 
 	for(i = 0; i < MAX_CURRENT_CLIENTS; i++) {
-		//printf("looking\n");
 		if(clients[i] != NULL) {
-			//printf("b4 lock\n");
 			pthread_mutex_lock(&clients[i]->mtx_client);
-			//printf("lock\n");
-			
 
-            /* Check if client still exists */
+            /* Check if client exists */
 			if(clients[i] != NULL) {
-				
-                    /* Check if address and port matches */
+                    /* Check adress and port */
 				if(strncmp(clients[i]->addr_str, addr_str, INET_ADDRSTRLEN) == 0
 					&& (htons((addr)->sin_port) == htons(clients[i]->addr->sin_port) )) {
-					// printf("client matched\n");
-				return clients[i];
+					return clients[i];
 
 			}else{
-				//rintf("client not matched\n");
 			}
 		}
-		// printf("call release_client\n");
 		release_client(clients[i]);
 	}
 }
@@ -141,19 +141,28 @@ client_t* get_client_by_addr(struct sockaddr_in *addr) {
 return NULL;
 }
 
-void release_client(client_t *client) { 
-	//printf("Client.c: release_client\n");   
-    if(client && pthread_mutex_trylock(&client->mtx_client) != 0) {
-        pthread_mutex_unlock(&client->mtx_client);
-        //printf("out of release_client\n");
-    }
-    else {
-        log_line("Tried to release non-locked client", LOG_WARN);
-    }
+/*
+___________________________________________________________
+
+    Release client's mutex.
+___________________________________________________________
+*/
+void release_client(client_t *client) {   
+	if(client && pthread_mutex_trylock(&client->mtx_client) != 0) {
+		pthread_mutex_unlock(&client->mtx_client);
+	}
+	else {
+		log_line("Wasn't able to unlock client", LOG_WARN);
+	}
 }
 
+/*
+___________________________________________________________
+
+    Return client by index.
+___________________________________________________________
+*/
 client_t* get_client_by_index(int index) {
-	//printf("Client.c: get_client_by_index\n");
 	if(index>= 0 && MAX_CURRENT_CLIENTS > index && clients[index]) {    
 		pthread_mutex_lock(&clients[index]->mtx_client);
 
@@ -163,25 +172,25 @@ client_t* get_client_by_index(int index) {
 	return NULL;
 }
 
+/*
+___________________________________________________________
+
+    Update time of client's last activity.
+___________________________________________________________
+*/
 void update_client_timestamp(client_t *client) {
-	//printf("Client.c: update_client_timestamp\n");
 	if(client != NULL) {
 		gettimeofday(&client->timestamp, NULL);
 	}
 }
 
-void set_client_color(client_t *client, int color){
-	if(color==COLOR_WHITE){
-		client->color=COLOR_WHITE;
-	}else if(color==COLOR_BLACK){
-		client->color=COLOR_BLACK;
-	}else{
-		client->color=0;
-	}
-}
+/*
+___________________________________________________________
 
-void remove_client(client_t **client) {  
-//printf("Client.c: remove_client\n");          
+    Remove certain client.
+___________________________________________________________
+*/
+void remove_client(client_t **client) {          
 	if(client != NULL) {
 		sprintf(log_buffer,
 			"Removing client with IP address: %s and port %d",
@@ -192,18 +201,13 @@ void remove_client(client_t **client) {
 		log_line(log_buffer, LOG_INFO);
 
 		clients[(*client)->client_index] = NULL;
-        client_code[(*client)->client_index] = NULL;
+		client_code[(*client)->client_index] = NULL;
 
 		free((*client)->addr);
 		free((*client)->addr_str);
-        free((*client)->code);
-        //free((*client)->name);
-        //printf("before name release\n");
-        //free((*client)->name);
-
+		free((*client)->code);
 		client_num --;
 
-        /* Release client */
 		release_client((*client));
 
 		clear_client_dgram_queue((*client));
@@ -214,6 +218,12 @@ void remove_client(client_t **client) {
 	*client = NULL;
 }
 
+/*
+___________________________________________________________
+
+    Clear client's packet queue.
+___________________________________________________________
+*/
 void clear_client_dgram_queue(client_t *client) {
 	packet_t *packet = queue_front(client->dgram_queue);
 
@@ -221,18 +231,23 @@ void clear_client_dgram_queue(client_t *client) {
 		queue_pop(client->dgram_queue, 0);
 
 		if(packet->state) {
-			free(packet->payload);
+			free(packet->message);
 		}
 
-		free(packet->msg);
+		free(packet->raw_msg);
 		free(packet);
 
 		packet = queue_front(client->dgram_queue);
 	}
 }
 
+/*
+___________________________________________________________
+
+    Remove all clients.
+___________________________________________________________
+*/
 void clear_all_clients() {
-	//printf("Client.c: clear_all_clients\n");
 	int i = 0;
 	client_t *client;
 
@@ -245,6 +260,12 @@ void clear_all_clients() {
 	}
 }
 
+/*
+___________________________________________________________
+
+    Generate client's code.
+___________________________________________________________
+*/
 int generate_client_code(char *s, int iteration)  {
 
 	int existing_index;
@@ -265,42 +286,54 @@ int generate_client_code(char *s, int iteration)  {
 	return 1;
 }
 
+/*
+___________________________________________________________
 
- void send_client_code(client_t *client) {
- 	//printf("Client.c send_reconnect_code\n");
- 	char *buff = (char *) malloc(11 + CODE_LEN);
+    Send client's code.
+___________________________________________________________
+*/
+void send_client_code(client_t *client) {
+	char *buff = (char *) malloc(11 + CODE_LEN);
 
- 	sprintf(buff,
- 		"CLIENT_CODE;%s;",
- 		client->code
- 		);
- 	// printf("reconnect_code\n");
- 	enqueue_dgram(client, buff, 1);
+	sprintf(buff,
+		"CLIENT_CODE;%s;",
+		client->code
+		);
+	enqueue_dgram(client, buff, 1);
 
- 	free(buff);
- }
+	free(buff);
+}
 
- // void send_client_name(client_t *client){
- // 	char *buff = (char *) malloc(11 + NAME_LEN);
+/*
+___________________________________________________________
 
- // 	sprintf(buff,
- // 		"CLIENT_NAME;%s;",
- // 		client->name
- // 		);
- // 	// printf("reconnect_code\n");
- // 	enqueue_dgram(client, buff, 1);
+    Get client index by code.
+___________________________________________________________
+*/
+int get_client_index_by_code(char *code) {
+	int i;
 
- // 	free(buff);
- // }
+	for(i = 0; i < MAX_CURRENT_CLIENTS; i++) {
+		if(client_code[i] && strncmp(client_code[i], code, CODE_LEN) == 0) {
+			return i;
+		}
+	}
 
- int get_client_index_by_code(char *code) {
-    int i;
-    
-    for(i = 0; i < MAX_CURRENT_CLIENTS; i++) {
-        if(client_code[i] && strncmp(client_code[i], code, CODE_LEN) == 0) {
-            return i;
-        }
-    }
-    
-    return -1;
+	return -1;
+}
+
+/*
+___________________________________________________________
+
+    Setting up client's color.
+___________________________________________________________
+*/
+void set_client_color(client_t *client, int color){
+	if(color==COLOR_WHITE){
+		client->color=COLOR_WHITE;
+	}else if(color==COLOR_BLACK){
+		client->color=COLOR_BLACK;
+	}else{
+		client->color=0;
+	}
 }

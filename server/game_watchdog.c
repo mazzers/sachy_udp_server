@@ -6,17 +6,17 @@
 #include "game.h"
 #include "global.h"
 #include "logger.h"
-
-/* Logger buffer */
+/*LOG buffer*/
 char log_buffer[LOG_BUFFER_SIZE];
 
-/**
- * void *start_watchdog(void *arg)
- * 
- * Entry point for watchdog thread. Watchdog keeps looping and checking all
- * created games if any of them timeouted untill he is signalled by main thread
- * that he should finish.
- */
+/*
+___________________________________________________________
+
+    Game watchdog thread. Check every secont if some game 
+    isn't timeouted or just one player is present in the
+    game. Removes inactive games.
+___________________________________________________________
+*/
 void *start_watchdog(void *arg) {
     pthread_mutex_t *mtx = (pthread_mutex_t *) arg;
     unsigned int got_games;
@@ -32,17 +32,15 @@ void *start_watchdog(void *arg) {
             if(game) {
                 got_games++;
                 
-                /* Game is running */
+
                 if(game->state==1) {
-                    /* If player pick timeouted */
+
                     if(game_time_before_timeout(game) < 0) {
-                        /* Check if there is another player that can play */
+
                         if(game->player_num > 1) {
-                            /* If game stayed in active state without anyone
-                             *  playing for way too long 
-                             */
+
                             if(game_time_play_state_timeout(game)) {
-                                /* Log */
+
                                 sprintf(log_buffer,
                                         "Game with code %s and index %i TIMEOUT",
                                         game->code,
@@ -55,15 +53,11 @@ void *start_watchdog(void *arg) {
                                 
                                 remove_game(&game, NULL);
                             }
-                            // else {
-                            //     set_game_playing(game);
-                                
-                            //     broadcast_game_playing_index(game, NULL);
-                            // }
+
                         }
-                        /* Only one player, remove game */
+
                         else {
-                            /* Log */
+
                             sprintf(log_buffer,
                                     "Game with code %s and index %i TIMEOUT",
                                     game->code,
@@ -77,12 +71,12 @@ void *start_watchdog(void *arg) {
                             remove_game(&game, NULL);
                         }
                     }
-                    //game has ended
+
                 }
-                /* Game is in lobby */
+
                 else {
                     if(game_time_before_timeout(game) < 0) {
-                        /* Log */
+
                         sprintf(log_buffer,
                                 "Game with code %s and index %i TIMEOUT",
                                 game->code,
@@ -98,13 +92,12 @@ void *start_watchdog(void *arg) {
                 }
                 
                 if(game) {
-                    /* Release game */
+
                     release_game(game);
                 }
             }
         }
         
-        /* Not much precision needed here, just sleep for a second */
         sleep(1);
     }
     
